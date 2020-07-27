@@ -200,7 +200,7 @@ class AnnaTcpClient(BaseAnnaClient):
             if tup.invalidate:
                 self._invalidate_cache(tup.key)
 
-            results[tup.key] = (tup.error == NO_ERROR)
+            results[tup.key] = tup.error #(tup.error == NO_ERROR)
 
         return results
 
