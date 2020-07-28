@@ -109,7 +109,7 @@ else
   echo -e "    seed_ip: " >> conf/anna-config.yml
   echo -e "    public_ip: $PUBLIC_IP" >> conf/anna-config.yml
   echo -e "    private_ip: $PRIVATE_IP" >> conf/anna-config.yml
-  echo -e "    mgmt_ip: " >> conf/anna-config.yml
+  echo -e "    mgmt_ip: 'NULL'" >> conf/anna-config.yml
 
   # LST=$(gen_yml_list "$MON_IPS")
   echo -e "    monitoring:" >> conf/anna-config.yml
