@@ -26,7 +26,7 @@ policy:
   tiering: false
 ebs: ./
 capacities: # in GB
-  memory-cap: 1 
+  memory-cap: 45
   ebs-cap: 0
 threads:
   memory: 1
