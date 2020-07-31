@@ -1,6 +1,6 @@
 ebs: /ebs
 capacities: # in GB
-  memory-cap: 45 
+  memory-cap: 60 
   ebs-cap: 256
 threads:
   memory: 4

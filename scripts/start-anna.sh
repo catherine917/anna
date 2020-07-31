@@ -78,7 +78,7 @@ fi
 # Tailor the config file to have process specific information.
 if [ "$1" = "mn" ]; then
   echo -e "monitoring:" >> conf/anna-config.yml
-  echo -e "    mgmt_ip: " >> conf/anna-config.yml
+  echo -e "    mgmt_ip: 127.0.0.1" >> conf/anna-config.yml
   echo -e "    ip: $PRIVATE_IP" >> conf/anna-config.yml
 
   # ./build/target/kvs/anna-monitor
@@ -87,7 +87,7 @@ elif [ "$1" = "r" ]; then
   echo -e "    ip: $PRIVATE_IP" >> conf/anna-config.yml
 
   # LST=$(gen_yml_list "$MON_IPS")
-  echo -e "    monitoring:" >> conf/anna-config.yml
+  echo -e "    monitoring: []" >> conf/anna-config.yml
   # echo -e "$LST" >> conf/anna-config.yml
 
   # ./build/target/kvs/anna-route
@@ -96,13 +96,12 @@ elif [ "$1" = "b" ]; then
   echo -e "    ip: $PRIVATE_IP" >> conf/anna-config.yml
 
   # LST=$(gen_yml_list "$MON_IPS")
-  echo -e "    monitoring:" >> conf/anna-config.yml
+  echo -e "    monitoring: []" >> conf/anna-config.yml
   # echo -e "$LST" >> conf/anna-config.yml
 
   # LST=$(gen_yml_list "$ROUTING_IPS")
-  echo -e "    routing:" >> conf/anna-config.yml
+  echo -e "    routing: []" >> conf/anna-config.yml
   # echo -e "$LST" >> conf/anna-config.yml
-
   # ./build/target/benchmark/anna-bench
 else
   echo -e "server:" >> conf/anna-config.yml
@@ -112,11 +111,11 @@ else
   echo -e "    mgmt_ip: 'NULL'" >> conf/anna-config.yml
 
   # LST=$(gen_yml_list "$MON_IPS")
-  echo -e "    monitoring:" >> conf/anna-config.yml
+  echo -e "    monitoring: []" >> conf/anna-config.yml
   # echo -e "$LST" >> conf/anna-config.yml
 
   # LST=$(gen_yml_list "$ROUTING_IPS")
-  echo -e "    routing:" >> conf/anna-config.yml
+  echo -e "    routing: []" >> conf/anna-config.yml
   # echo -e "$LST" >> conf/anna-config.yml
 
   # ./build/target/kvs/anna-kvs
