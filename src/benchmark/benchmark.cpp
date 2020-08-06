@@ -179,6 +179,7 @@ void run(const unsigned &thread_id,
           }
 
           Key key = generate_key(k);
+          log->info("Key:{}", key);
 
           if (type == "G") {
             client.get_async(key);
@@ -195,15 +196,18 @@ void run(const unsigned &thread_id,
           } else if (type == "M") {
             auto req_start = std::chrono::system_clock::now();
             unsigned ts = generate_timestamp(thread_id);
+            auto put_n = 0;
+            auto get_n = 0;
             LWWPairLattice<string> val(
                 TimestampValuePair<string>(ts, string(length, 'a')));
 
             client.put_async(key, serialize(val), LatticeType::LWW);
+            put_n += 1;
             receive(&client);
             client.get_async(key);
+            get_n += 1;
             receive(&client);
             count += 2;
-
             auto req_end = std::chrono::system_clock::now();
 
             double key_latency =
@@ -234,6 +238,7 @@ void run(const unsigned &thread_id,
           // report throughput every report_period seconds
           if (time_elapsed >= report_period) {
             double throughput = (double)count / (double)time_elapsed;
+            log->info("PUT requests is {}, Get requests is {}:", put_n, get_n);
             log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
                       throughput);
             epoch += 1;
