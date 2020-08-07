@@ -169,8 +169,6 @@ void run(const unsigned &thread_id,
                               benchmark_end - benchmark_start)
                               .count();
         unsigned epoch = 1;
-        unsigned put_n = 0;
-        unsigned get_n = 0;
 
         while (true) {
           unsigned k;
@@ -202,10 +200,8 @@ void run(const unsigned &thread_id,
                 TimestampValuePair<string>(ts, string(length, 'a')));
 
             client.put_async(key, serialize(val), LatticeType::LWW);
-            put_n += 1;
             receive(&client);
             client.get_async(key);
-            get_n += 1;
             receive(&client);
             count += 2;
             auto req_end = std::chrono::system_clock::now();
@@ -279,7 +275,7 @@ void run(const unsigned &thread_id,
             break;
           }
         }
-        log->info("PUT requests is {}, Get requests is {}:", put_n, get_n);
+        log->info("Total number of request is {}", (double)count);
         log->info("Finished");
         UserFeedback feedback;
 
