@@ -238,7 +238,6 @@ void run(const unsigned &thread_id,
           // report throughput every report_period seconds
           if (time_elapsed >= report_period) {
             double throughput = (double)count / (double)time_elapsed;
-            log->info("PUT requests is {}, Get requests is {}:", put_n, get_n);
             log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
                       throughput);
             epoch += 1;
@@ -280,7 +279,7 @@ void run(const unsigned &thread_id,
             break;
           }
         }
-
+        log->info("PUT requests is {}, Get requests is {}:", put_n, get_n);
         log->info("Finished");
         UserFeedback feedback;
 
