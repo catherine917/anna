@@ -51,7 +51,7 @@ void user_request_handler(
     map<Key, std::multiset<TimePoint>> &key_access_tracker,
     map<Key, KeyProperty> &stored_key_map,
     map<Key, KeyReplication> &key_replication_map, set<Key> &local_changeset,
-    ServerThread &wt, SerializerMap &serializers, SocketCache &pushers);
+    ServerThread &wt, SerializerMap &serializers, SocketCache &pushers, unsigned &rep_count);
 
 void gossip_handler(unsigned &seed, string &serialized,
                     GlobalRingMap &global_hash_rings,

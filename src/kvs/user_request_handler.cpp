@@ -21,7 +21,7 @@ void user_request_handler(
     map<Key, std::multiset<TimePoint>> &key_access_tracker,
     map<Key, KeyProperty> &stored_key_map,
     map<Key, KeyReplication> &key_replication_map, set<Key> &local_changeset,
-    ServerThread &wt, SerializerMap &serializers, SocketCache &pushers) {
+    ServerThread &wt, SerializerMap &serializers, SocketCache &pushers, unsigned &rep_count) {
   KeyRequest request;
   request.ParseFromString(serialized);
 
@@ -122,6 +122,7 @@ void user_request_handler(
   if (response.tuples_size() > 0 && request.response_address() != "") {
     string serialized_response;
     response.SerializeToString(&serialized_response);
+    rep_count += 1;
     kZmqUtil->send_string(serialized_response,
                           &pushers[request.response_address()]);
   }
