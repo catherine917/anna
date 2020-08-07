@@ -169,6 +169,8 @@ void run(const unsigned &thread_id,
                               benchmark_end - benchmark_start)
                               .count();
         unsigned epoch = 1;
+        unsigned put_n = 0;
+        unsigned get_n = 0;
 
         while (true) {
           unsigned k;
@@ -196,8 +198,6 @@ void run(const unsigned &thread_id,
           } else if (type == "M") {
             auto req_start = std::chrono::system_clock::now();
             unsigned ts = generate_timestamp(thread_id);
-            auto put_n = 0;
-            auto get_n = 0;
             LWWPairLattice<string> val(
                 TimestampValuePair<string>(ts, string(length, 'a')));
 
