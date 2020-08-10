@@ -22,9 +22,10 @@ void user_request_handler(
     map<Key, KeyProperty> &stored_key_map,
     map<Key, KeyReplication> &key_replication_map, set<Key> &local_changeset,
     ServerThread &wt, SerializerMap &serializers, SocketCache &pushers, 
-    unsigned &rep_count, unsigned &req_count) {
+    unsigned &rep_count, unsigned &req_count, unsigned long *counters) {
   KeyRequest request;
   request.ParseFromString(serialized);
+  counters[0]++;
   req_count += 1;
   KeyResponse response;
   string response_id = request.request_id();
@@ -55,6 +56,7 @@ void user_request_handler(
           tp->set_key(key);
           tp->set_lattice_type(tuple.lattice_type());
           tp->set_error(AnnaError::WRONG_THREAD);
+          counters[1]++;
         } else {
           // if we don't know what threads are responsible, we issue a rep
           // factor request and make the request pending
@@ -63,6 +65,7 @@ void user_request_handler(
               global_hash_rings[Tier::MEMORY], local_hash_rings[Tier::MEMORY],
               pushers, seed);
 
+          counters[6]++;
           pending_requests[key].push_back(
               PendingRequest(request_type, tuple.lattice_type(), payload,
                              response_address, response_id));
@@ -72,6 +75,11 @@ void user_request_handler(
         tp->set_key(key);
 
         if (request_type == RequestType::GET) {
+          if (is_meta) {
+            counters[2]++;
+          } else {
+            counters[3]++;
+          }
           if (stored_key_map.find(key) == stored_key_map.end() ||
               stored_key_map[key].type_ == LatticeType::NONE) {
 
@@ -83,6 +91,11 @@ void user_request_handler(
             tp->set_error(res.second);
           }
         } else if (request_type == RequestType::PUT) {
+          if (is_meta) {
+            counters[4]++;
+          } else {
+            counters[5]++;
+          }
           if (tuple.lattice_type() == LatticeType::NONE) {
             log->error("PUT request missing lattice type.");
           } else if (stored_key_map.find(key) != stored_key_map.end() &&
@@ -116,6 +129,7 @@ void user_request_handler(
         access_count += 1;
       }
     } else {
+      counters[6]++;
       pending_requests[key].push_back(
           PendingRequest(request_type, tuple.lattice_type(), payload,
                          response_address, response_id));
@@ -126,6 +140,7 @@ void user_request_handler(
     string serialized_response;
     response.SerializeToString(&serialized_response);
     rep_count += 1;
+    counters[7]++;
     kZmqUtil->send_string(serialized_response,
                           &pushers[request.response_address()]);
   }
