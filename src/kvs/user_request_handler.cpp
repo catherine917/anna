@@ -107,8 +107,8 @@ void user_request_handler(
 
         if (tuple.address_cache_size() > 0 &&
             tuple.address_cache_size() != threads.size()) {
-          log->info("address cache size is {}", tuple.address_cache_size());
-          log->info("threads size is {}", threads.size());
+          // log->info("address cache size is {}", tuple.address_cache_size());
+          // log->info("threads size is {}", threads.size());
           tp->set_invalidate(true);
         }
 
