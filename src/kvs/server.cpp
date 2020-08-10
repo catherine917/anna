@@ -300,6 +300,21 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
   auto report_start = std::chrono::system_clock::now();
   auto report_end = std::chrono::system_clock::now();
 
+  //the log frequency is same with gossip period
+  #define LOG_PERIOD 10000000 // 10 seconds
+  auto log_start = std::chrono::system_clock::now();
+
+  //counters[0] is the counter of total incoming request from mq
+  //counters[1] is the counter of wrong thread metadata key
+  //counters[2] is the counter of get metadata key
+  //counters[3] is the counter of get non metadata key
+  //counters[4] is the counter of put metadata key
+  //counters[5] is the counter of put non metadata key
+  //counters[6] is the counter of pending request
+  //counters[7] is the counter of sending reponse to mq
+  #define COUNTERS_NUM 8
+  unsigned long counters[COUNTERS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
+
   unsigned long long working_time = 0;
   unsigned long long working_time_map[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   unsigned epoch = 0;
@@ -359,7 +374,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
                            global_hash_rings, local_hash_rings,
                            pending_requests, key_access_tracker, stored_key_map,
                            key_replication_map, local_changeset, wt,
-                           serializers, pushers, rep_count, req_count);
+                           serializers, pushers, rep_count, req_count, counters);
 
       auto time_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
                               std::chrono::system_clock::now() - work_start)
@@ -448,6 +463,26 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
                               .count();
       working_time += time_elapsed;
       working_time_map[8] += time_elapsed;
+    }
+
+    //log statistics info
+    auto current_time = std::chrono::system_clock::now();
+    if (std::chrono::duration_cast<std::chrono::microseconds>(
+        current_time - log_start
+      ).count() >= LOG_PERIOD) {
+      log->info("Statistics Info: count of total incoming request from mq:{}\n\
+                                  count of wrong thread metadata key:{}\n\
+                                  count of get metadata key:{}\n\
+                                  count of get non metadata key:{}\n\
+                                  count of put metadata key:{}\n\
+                                  count of put non metadata key:{}\n\
+                                  count of pending request:{}\n\
+                                  count of sending reponse to mq:{}\n\
+                                  ", counters[0], counters[1], counters[2], counters[3], counters[4], counters[5], counters[6], counters[7]);
+      for (int i = 0; i < COUNTERS_NUM; i++) {
+        counters[i] = 0;
+      }
+      log_start = current_time;
     }
 
     // gossip updates to other threads
