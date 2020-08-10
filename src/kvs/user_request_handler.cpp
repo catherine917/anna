@@ -21,10 +21,11 @@ void user_request_handler(
     map<Key, std::multiset<TimePoint>> &key_access_tracker,
     map<Key, KeyProperty> &stored_key_map,
     map<Key, KeyReplication> &key_replication_map, set<Key> &local_changeset,
-    ServerThread &wt, SerializerMap &serializers, SocketCache &pushers, unsigned &rep_count) {
+    ServerThread &wt, SerializerMap &serializers, SocketCache &pushers, 
+    unsigned &rep_count, unsigned &req_count) {
   KeyRequest request;
   request.ParseFromString(serialized);
-
+  req_count += 1;
   KeyResponse response;
   string response_id = request.request_id();
   response.set_response_id(request.request_id());
@@ -106,6 +107,8 @@ void user_request_handler(
 
         if (tuple.address_cache_size() > 0 &&
             tuple.address_cache_size() != threads.size()) {
+          log->info("address cache is {}", tuple.address_cache_size());
+          log->info("threads is {}", threads);
           tp->set_invalidate(true);
         }
 
@@ -126,4 +129,8 @@ void user_request_handler(
     kZmqUtil->send_string(serialized_response,
                           &pushers[request.response_address()]);
   }
+  if(req_count > 10000) {
+
+  }
+  log->info("Request number is:{}, response number is:{}", req_count, rep_count)
 }

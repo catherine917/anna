@@ -355,12 +355,11 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
       auto work_start = std::chrono::system_clock::now();
       
       string serialized = kZmqUtil->recv_string(&request_puller);
-      req_count += 1;
       user_request_handler(access_count, seed, serialized, log,
                            global_hash_rings, local_hash_rings,
                            pending_requests, key_access_tracker, stored_key_map,
                            key_replication_map, local_changeset, wt,
-                           serializers, pushers, rep_count);
+                           serializers, pushers, rep_count, req_count);
 
       auto time_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
                               std::chrono::system_clock::now() - work_start)
@@ -511,10 +510,10 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
                         .count();
 
     if (duration >= kServerReportThreshold) {
-      log->info("The number of the requests is {} in {} seconds", req_count, kServerReportThreshold);
-      log->info("The number of the responses is {} in {} seconds", rep_count, kServerReportThreshold);
-      req_count = 0;
-      rep_count = 0;
+      // log->info("The number of the requests is {} in {} seconds", req_count, kServerReportThreshold);
+      // log->info("The number of the responses is {} in {} seconds", rep_count, kServerReportThreshold);
+      // req_count = 0;
+      // rep_count = 0;
       epoch += 1;
       auto ts = generate_timestamp(wt.tid());
 
