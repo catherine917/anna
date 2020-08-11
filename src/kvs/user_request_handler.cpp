@@ -41,7 +41,7 @@ void user_request_handler(
     // first check if the thread is responsible for the key
     Key key = tuple.key();
     string payload = tuple.payload();
-
+    bool is_meta = is_metadata(key);
     ServerThreadList threads = kHashRingUtil->get_responsible_threads(
         wt.replication_response_connect_address(), key, is_metadata(key),
         global_hash_rings, local_hash_rings, key_replication_map, pushers,
