@@ -202,10 +202,10 @@ void run(const unsigned &thread_id,
 
             client.put_async(key, serialize(val), LatticeType::LWW);
             req_num += 1;
-            // receive(&client);
+            receive(&client);
             client.get_async(key);
             req_num += 1;
-            // receive(&client);
+            receive(&client);
             count += 2;
             auto req_end = std::chrono::system_clock::now();
 

@@ -144,8 +144,4 @@ void user_request_handler(
     kZmqUtil->send_string(serialized_response,
                           &pushers[request.response_address()]);
   }
-  // if(req_count > 10000) {
-
-  // }
-  // log->info("Request number is:{}, response number is:{}", req_count, rep_count);
 }
