@@ -94,7 +94,6 @@ void run(const unsigned &thread_id,
 
   client.set_logger(log);
   unsigned seed = client.get_seed();
-  unsigned long counters[2] = {0, 0};
 
   // observed per-key avg latency
   map<Key, std::pair<double, unsigned>> observed_latency;
@@ -111,7 +110,6 @@ void run(const unsigned &thread_id,
 
   while (true) {
     kZmqUtil->poll(-1, &pollitems);
-
     if (pollitems[0].revents & ZMQ_POLLIN) {
       string msg = kZmqUtil->recv_string(&command_puller);
       log->info("Received benchmark command: {}", msg);
@@ -145,6 +143,7 @@ void run(const unsigned &thread_id,
         unsigned report_period = stoi(v[4]);
         unsigned time = stoi(v[5]);
         double zipf = stod(v[6]);
+        unsigned long counters[2] = {0, 0};
 
         map<unsigned, double> sum_probs;
         double base;
@@ -282,6 +281,8 @@ void run(const unsigned &thread_id,
         }
         log->info("Total number of request is {}, number of receive is {}", counters[0], counters[1]);
         log->info("Finished");
+        counters[0] = 0;
+        counters[1] = 0;
         UserFeedback feedback;
 
         feedback.set_uid(ip + ":" + std::to_string(thread_id));
