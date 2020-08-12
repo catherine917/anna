@@ -94,7 +94,7 @@ void run(const unsigned &thread_id,
 
   client.set_logger(log);
   unsigned seed = client.get_seed();
-  unsigned req_num = 0;
+  unsigned long counters[2] = {0, 0};
 
   // observed per-key avg latency
   map<Key, std::pair<double, unsigned>> observed_latency;
@@ -201,11 +201,13 @@ void run(const unsigned &thread_id,
                 TimestampValuePair<string>(ts, string(length, 'a')));
 
             client.put_async(key, serialize(val), LatticeType::LWW);
-            req_num += 1;
+            counters[0] += 1;
             receive(&client);
+            counters[1] += 1;
             client.get_async(key);
-            req_num += 1;
+            counters[0] += 1;
             receive(&client);
+            counters[1] += 1;
             count += 2;
             auto req_end = std::chrono::system_clock::now();
 
@@ -278,7 +280,7 @@ void run(const unsigned &thread_id,
             break;
           }
         }
-        log->info("Total number of request is {}", req_num);
+        log->info("Total number of request is {}, number of receive is {}", counters[0], counters[1]);
         log->info("Finished");
         UserFeedback feedback;
 
