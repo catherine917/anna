@@ -193,35 +193,37 @@ void run(const unsigned &thread_id,
             count += 1;
           }
         }
+        log->info("PUT requests finished.");
         unsigned r = 0;
         while(r < num_keys) {
           receive(&client);
           r += 1;
           counters[1] += 1;
         }
-        for(unsigned i = 0; i < num_keys; i++) {
-          if(type == "M") {
-            // auto req_start = std::chrono::system_clock::now();
-            // unsigned ts = generate_timestamp(thread_id);
-            // LWWPairLattice<string> val(
-            //     TimestampValuePair<string>(ts, string(length, 'a')));
-            // benchmark_start = std::chrono::system_clock::now();
-            client.get_async(keys[i]);
-            counters[0] += 1;
-            count += 1;
-          }
-        }
-        r = 0;
-        while(r < num_keys) {
-          receive(&client);
-          r += 1;
-          counters[1] += 1;
-        }
+        log->info("PUT requests receive finished.");
+        // for(unsigned i = 0; i < num_keys; i++) {
+        //   if(type == "M") {
+        //     // auto req_start = std::chrono::system_clock::now();
+        //     // unsigned ts = generate_timestamp(thread_id);
+        //     // LWWPairLattice<string> val(
+        //     //     TimestampValuePair<string>(ts, string(length, 'a')));
+        //     // benchmark_start = std::chrono::system_clock::now();
+        //     client.get_async(keys[i]);
+        //     counters[0] += 1;
+        //     count += 1;
+        //   }
+        // }
+        // r = 0;
+        // while(r < num_keys) {
+        //   receive(&client);
+        //   r += 1;
+        //   counters[1] += 1;
+        // }
         benchmark_end = std::chrono::system_clock::now();
         auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                                   benchmark_end - benchmark_start)
                                   .count();
-        
+        log->info("time elapsed is {}", time_elapsed);
         double throughput = (double)count / (double)time_elapsed;
         log->info("Throughput is {} ops/seconds.", throughput);
         // while (true) {
