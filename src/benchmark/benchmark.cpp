@@ -170,7 +170,7 @@ void run(const unsigned &thread_id,
                               .count();
         unsigned epoch = 1;
 
-        unsigned long keys[num_keys];
+        string keys[num_keys];
         for(unsigned i = 0; i < num_keys; i++) {
           unsigned k;
           if(zipf > 0) {
