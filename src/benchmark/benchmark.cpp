@@ -194,13 +194,13 @@ void run(const unsigned &thread_id,
           }
         }
         log->info("PUT requests finished.");
-        unsigned r = 0;
-        while(r < num_keys) {
+        
+        for(unsigned r = 0; r < num_keys; r++) {
           receive(&client);
-          r += 1;
           counters[1] += 1;
         }
         log->info("PUT requests receive finished.");
+        
         // for(unsigned i = 0; i < num_keys; i++) {
         //   if(type == "M") {
         //     // auto req_start = std::chrono::system_clock::now();
