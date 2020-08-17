@@ -24,6 +24,6 @@ SET(LIBRARY_DEPENDENCIES
     yaml-cpp
 )
 
-ADD_EXECUTABLE(anna-cli cli.cpp)
-TARGET_LINK_LIBRARIES(anna-cli ${LIBRARY_DEPENDENCIES})
-ADD_DEPENDENCIES(anna-cli zeromq zeromqcpp)
+# ADD_EXECUTABLE(anna-cli cli.cpp)
+# TARGET_LINK_LIBRARIES(anna-cli ${LIBRARY_DEPENDENCIES})
+# ADD_DEPENDENCIES(anna-cli zeromq zeromqcpp)
