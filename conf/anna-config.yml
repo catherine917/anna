@@ -8,7 +8,7 @@ threads:
   routing: 4
   benchmark: 12
 replication:
-  memory: 4
+  memory: 2
   ebs: 0
   minimum: 1
   local: 4

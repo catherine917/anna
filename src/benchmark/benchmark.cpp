@@ -298,6 +298,8 @@ void run(const unsigned &thread_id,
 
             auto latency = (double)1000000 / throughput;
             UserFeedback feedback;
+            log->info("[Epoch {}] latency is {} microseconds.", epoch,
+                      latency);
 
             feedback.set_uid(ip + ":" + std::to_string(thread_id));
             feedback.set_latency(latency);
