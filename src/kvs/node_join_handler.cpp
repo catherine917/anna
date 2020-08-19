@@ -123,7 +123,5 @@ void node_join_handler(unsigned thread_id, unsigned &seed, Address public_ip,
         }
       }
     }
-  }else {
-    log->info("Join failed, receive message is {}", v);
   }
 }
