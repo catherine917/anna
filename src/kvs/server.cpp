@@ -489,7 +489,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
         global_replication_memory is: {}\n\
         local_replication_memory is: {}\n", 
         iter->first, key_replication_map[iter->first].global_replication_[Tier::MEMORY], 
-        key_replication_map[iter->first].local_replication_[Tier::MEMORY], );
+        key_replication_map[iter->first].local_replication_[Tier::MEMORY]);
       }
     }
 
