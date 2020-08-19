@@ -23,6 +23,7 @@ void replication_response_handler(
     map<Key, KeyProperty> &stored_key_map,
     map<Key, KeyReplication> &key_replication_map, set<Key> &local_changeset,
     ServerThread &wt, SerializerMap &serializers, SocketCache &pushers) {
+  log->info("Received a replication factor request.");
   KeyResponse response;
   response.ParseFromString(serialized);
 

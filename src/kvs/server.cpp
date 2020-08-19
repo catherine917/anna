@@ -484,6 +484,14 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
         counters[i] = 0;
       }
       log_start = current_time;
+
+      for(map<Key, KeyReplication>::iterator iter = key_replication_map.begin(); iter != key_replication_map.end(); iter++) {
+        log->info("key is: {}\n\
+        global_replication_memory is: {}\n\
+        local_replication_memory is: {}\n", 
+        iter->first, key_replication_map[iter->first].global_replication_[Tier::MEMORY], 
+        key_replication_map[iter->first].local_replication_[Tier::MEMORY]);
+      }
     }
 
     // gossip updates to other threads
