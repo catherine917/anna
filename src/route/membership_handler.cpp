@@ -26,7 +26,7 @@ void membership_handler(logger log, string &serialized, SocketCache &pushers,
   Tier_Parse(v[1], &tier);
   Address new_server_public_ip = v[2];
   Address new_server_private_ip = v[3];
-
+  log->info("Receive message from server: public ip is {}, type is {}", new_server_public_ip, new_server_private_ip );
   if (type == "join") {
     // we only read the join count if it's a join message, not if it's a depart
     // message because the latter does not send a join count
@@ -38,7 +38,6 @@ void membership_handler(logger log, string &serialized, SocketCache &pushers,
     // update hash ring
     bool inserted = global_hash_rings[tier].insert(
         new_server_public_ip, new_server_private_ip, join_count, 0);
-
     if (inserted) {
       if (thread_id == 0) {
         // gossip the new node address between server nodes to ensure

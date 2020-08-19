@@ -330,6 +330,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
       auto work_start = std::chrono::system_clock::now();
 
       string serialized = kZmqUtil->recv_string(&join_puller);
+      log->info("Trigger node_join_handler receive msg is {}", serialized);
       node_join_handler(thread_id, seed, public_ip, private_ip, log, serialized,
                         global_hash_rings, local_hash_rings, stored_key_map,
                         key_replication_map, join_remove_set, pushers, wt,

@@ -31,7 +31,6 @@ void node_join_handler(unsigned thread_id, unsigned &seed, Address public_ip,
   Address new_server_public_ip = v[1];
   Address new_server_private_ip = v[2];
   int join_count = stoi(v[3]);
-
   // update global hash ring
   bool inserted = global_hash_rings[tier].insert(
       new_server_public_ip, new_server_private_ip, join_count, 0);
@@ -124,5 +123,7 @@ void node_join_handler(unsigned thread_id, unsigned &seed, Address public_ip,
         }
       }
     }
+  }else {
+    log->info("Join failed, receive message is {}", v);
   }
 }
