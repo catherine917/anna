@@ -1,6 +1,6 @@
 ## Anna Cluster Set up on AWS (Local Mode)
 
-### Set up instance
+### Set up instances
 - Login AWS Console
 - Choose EC2 Service
 - Click AMI link(on the left side of the console)
@@ -9,6 +9,25 @@
 - Security group: `launch-wizard-12`
 - Private key: `hydro.k8s.local.pem`
 
+### Set up instances using aws cli
+- Install aws cli (https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-windows.html)
+- Open a bash terminal
+- AWS configuration
+```
+aws configure
+AWS Access Key ID: your key id
+AWS Secret Access Key: your key
+Default region name: ap-southeast-1
+Default output format [None]: 
+
+```
+- Enter the folder which contains the private key (hydro.k8s.local.pem) and run the commond below
+```
+aws ec2 run-instances --image-id ami-010511def9bba7d61  --count 2 --instance-
+type r4.2xlarge --key-name hydro.k8s.local  --security-group-ids sg-01013f2077c
+5f9ef3
+// you can modify the count parameter to the number which you wanted. Other parameters can remain default.
+```
 ### Code update and build
 ```
 cd anna 
