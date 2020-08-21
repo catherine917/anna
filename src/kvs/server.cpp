@@ -576,9 +576,10 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
         double event_occupancy = (double)time / ((double)duration * 1000000);
 
         if (event_occupancy > 0.02) {
-          log->info("Event {} occupancy is {}.", std::to_string(index++),
+          log->info("Event {} occupancy is {}.", std::to_string(index),
                     std::to_string(event_occupancy));
         }
+        index++;
       }
 
       double occupancy = (double)working_time / ((double)duration * 1000000);
