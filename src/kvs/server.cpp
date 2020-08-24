@@ -322,6 +322,9 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
   unsigned req_count = 0;
   unsigned rep_count = 0;
 
+  // this counts the times replication_response_handler runs
+  unsigned long replication_counter = 0;
+
   // enter event loop
   while (true) {
     kZmqUtil->poll(0, &pollitems);
@@ -409,7 +412,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
           seed, access_count, log, serialized, global_hash_rings,
           local_hash_rings, pending_requests, pending_gossip,
           key_access_tracker, stored_key_map, key_replication_map,
-          local_changeset, wt, serializers, pushers);
+          local_changeset, wt, serializers, pushers, replication_counter);
 
       auto time_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
                               std::chrono::system_clock::now() - work_start)
@@ -485,12 +488,19 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
       }
       log_start = current_time;
 
+      log->info("times replication_response_handler runs is:{}\n", replication_counter);
+      replication_counter = 0;
+
       for(map<Key, KeyReplication>::iterator iter = key_replication_map.begin(); iter != key_replication_map.end(); iter++) {
-        log->info("key is: {}\n\
+        log->info("key in key_replication_map is: {}\n\
         global_replication_memory is: {}\n\
         local_replication_memory is: {}\n", 
         iter->first, key_replication_map[iter->first].global_replication_[Tier::MEMORY], 
         key_replication_map[iter->first].local_replication_[Tier::MEMORY]);
+      }
+
+      for (const auto &key_pair: stored_key_map) {
+        log->info("key in stored_key_map is: {}\n", key_pair.first);
       }
     }
 

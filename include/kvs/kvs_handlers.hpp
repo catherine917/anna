@@ -70,7 +70,7 @@ void replication_response_handler(
     map<Key, std::multiset<TimePoint>> &key_access_tracker,
     map<Key, KeyProperty> &stored_key_map,
     map<Key, KeyReplication> &key_replication_map, set<Key> &local_changeset,
-    ServerThread &wt, SerializerMap &serializers, SocketCache &pushers);
+    ServerThread &wt, SerializerMap &serializers, SocketCache &pushers, unsigned long &replication_counter);
 
 void replication_change_handler(
     Address public_ip, Address private_ip, unsigned thread_id, unsigned &seed,
