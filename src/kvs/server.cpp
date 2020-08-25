@@ -499,9 +499,13 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
         key_replication_map[iter->first].local_replication_[Tier::MEMORY]);
       }
 
+      unsigned long key_num = 0;
       for (const auto &key_pair: stored_key_map) {
         log->info("key in stored_key_map is: {}\n", key_pair.first);
+        key_num++;
       }
+      log->info("key number in stored_key_map is: {}\n", key_num);
+      key_num = 0;
     }
 
     // gossip updates to other threads
