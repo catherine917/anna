@@ -45,6 +45,13 @@ void receive(KvsClientInterface *client, unsigned long *counter) {
   }
 }
 
+void receive_key_addr(KvsClientInterface *client) {
+  vector<KeyResponse> responses = client->receive_key_addr();
+  while (responses.size() == 0) {
+    responses = client->receive_key_addr();
+  }
+}
+
 int sample(int n, unsigned &seed, double base,
            map<unsigned, double> &sum_probs) {
   double z;           // Uniform random number (0 < z < 1)
@@ -161,14 +168,14 @@ void run(const unsigned &thread_id,
         }
 
         size_t count = 0;
-        auto benchmark_start = std::chrono::system_clock::now();
-        auto benchmark_end = std::chrono::system_clock::now();
-        auto epoch_start = std::chrono::system_clock::now();
-        auto epoch_end = std::chrono::system_clock::now();
-        auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
-                              benchmark_end - benchmark_start)
-                              .count();
-        unsigned epoch = 1;
+        // auto benchmark_start = std::chrono::system_clock::now();
+        // auto benchmark_end = std::chrono::system_clock::now();
+        // auto epoch_start = std::chrono::system_clock::now();
+        // auto epoch_end = std::chrono::system_clock::now();
+        // auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
+        //                       benchmark_end - benchmark_start)
+        //                       .count();
+        // unsigned epoch = 1;
 
         string keys[num_keys];
         for(unsigned i = 0; i < num_keys; i++) {
@@ -181,19 +188,27 @@ void run(const unsigned &thread_id,
           Key key = generate_key(k);
           keys[i] =  key;
         }
-        // for(unsigned i = 0; i < num_keys; i++) {
-        //   if(type == "M") {
-        //     auto req_start = std::chrono::system_clock::now();
-        //     unsigned ts = generate_timestamp(thread_id);
-        //     LWWPairLattice<string> val(
-        //         TimestampValuePair<string>(ts, string(length, 'a')));
-        //     benchmark_start = std::chrono::system_clock::now();
-        //     client.put_async(keys[i], serialize(val), LatticeType::LWW);
-        //     counters[0] += 1;
-        //     count += 1;
-        //   }
-        // }
-        // log->info("PUT requests finished.");
+        auto benchmark_start = std::chrono::system_clock::now();
+        for(unsigned i = 0; i < num_keys; i++) {
+          if(type == "M") {
+            auto req_start = std::chrono::system_clock::now();
+            unsigned ts = generate_timestamp(thread_id);
+            LWWPairLattice<string> val(
+                TimestampValuePair<string>(ts, string(length, 'a')));
+            client.put_async(keys[i], serialize(val), LatticeType::LWW);
+            receive_key_addr();
+            counters[0] += 1;
+            count += 1;
+          }
+        }
+        auto benchmark_end = std::chrono::system_clock::now();
+        auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
+                                  benchmark_end - benchmark_start)
+                                  .count();
+        double throughput = (double)count / (double)total_time;
+            log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
+                      throughput);
+        log->info("PUT requests finished.");
         
         // for(unsigned r = 0; r < num_keys; r++) {
         //   receive(&client);
@@ -226,115 +241,115 @@ void run(const unsigned &thread_id,
         // log->info("time elapsed is {}", time_elapsed);
         // double throughput = (double)count / (double)time_elapsed;
         // log->info("Throughput is {} ops/seconds.", throughput);
-        while (true) {
-          unsigned k;
-          if (zipf > 0) {
-            k = sample(num_keys, seed, base, sum_probs);
-          } else {
-            k = rand_r(&seed) % (num_keys) + 1;
-          }
+        // while (true) {
+        //   unsigned k;
+        //   if (zipf > 0) {
+        //     k = sample(num_keys, seed, base, sum_probs);
+        //   } else {
+        //     k = rand_r(&seed) % (num_keys) + 1;
+        //   }
 
-          Key key = generate_key(k);
-          // log->info("Key:{}", key);
+        //   Key key = generate_key(k);
+        //   // log->info("Key:{}", key);
 
-          if (type == "G") {
-            client.get_async(key);
-            // receive(&client);
-            count += 1;
-          } else if (type == "P") {
-            unsigned ts = generate_timestamp(thread_id);
-            LWWPairLattice<string> val(
-                TimestampValuePair<string>(ts, string(length, 'a')));
+        //   if (type == "G") {
+        //     client.get_async(key);
+        //     // receive(&client);
+        //     count += 1;
+        //   } else if (type == "P") {
+        //     unsigned ts = generate_timestamp(thread_id);
+        //     LWWPairLattice<string> val(
+        //         TimestampValuePair<string>(ts, string(length, 'a')));
 
-            client.put_async(key, serialize(val), LatticeType::LWW);
-            receive(&client, counters);
-            count += 1;
-          } else if (type == "M") {
-            auto req_start = std::chrono::system_clock::now();
-            unsigned ts = generate_timestamp(thread_id);
-            LWWPairLattice<string> val(
-                TimestampValuePair<string>(ts, string(length, 'a')));
+        //     client.put_async(key, serialize(val), LatticeType::LWW);
+        //     receive(&client, counters);
+        //     count += 1;
+        //   } else if (type == "M") {
+        //     auto req_start = std::chrono::system_clock::now();
+        //     unsigned ts = generate_timestamp(thread_id);
+        //     LWWPairLattice<string> val(
+        //         TimestampValuePair<string>(ts, string(length, 'a')));
 
-            client.put_async(key, serialize(val), LatticeType::LWW);
-            counters[0] += 1;
-            receive(&client, counters);
-            client.get_async(key);
-            counters[0] += 1;
-            receive(&client, counters);
-            count += 2;
-            auto req_end = std::chrono::system_clock::now();
+        //     client.put_async(key, serialize(val), LatticeType::LWW);
+        //     counters[0] += 1;
+        //     receive(&client, counters);
+        //     client.get_async(key);
+        //     counters[0] += 1;
+        //     receive(&client, counters);
+        //     count += 2;
+        //     auto req_end = std::chrono::system_clock::now();
 
-            double key_latency =
-                (double)std::chrono::duration_cast<std::chrono::microseconds>(
-                    req_end - req_start)
-                    .count() /
-                2;
+        //     double key_latency =
+        //         (double)std::chrono::duration_cast<std::chrono::microseconds>(
+        //             req_end - req_start)
+        //             .count() /
+        //         2;
 
-            if (observed_latency.find(key) == observed_latency.end()) {
-              observed_latency[key].first = key_latency;
-              observed_latency[key].second = 1;
-            } else {
-              observed_latency[key].first =
-                  (observed_latency[key].first * observed_latency[key].second +
-                   key_latency) /
-                  (observed_latency[key].second + 1);
-              observed_latency[key].second += 1;
-            }
-          } else {
-            log->info("{} is an invalid request type.", type);
-          }
+        //     if (observed_latency.find(key) == observed_latency.end()) {
+        //       observed_latency[key].first = key_latency;
+        //       observed_latency[key].second = 1;
+        //     } else {
+        //       observed_latency[key].first =
+        //           (observed_latency[key].first * observed_latency[key].second +
+        //            key_latency) /
+        //           (observed_latency[key].second + 1);
+        //       observed_latency[key].second += 1;
+        //     }
+        //   } else {
+        //     log->info("{} is an invalid request type.", type);
+        //   }
 
-          epoch_end = std::chrono::system_clock::now();
-          auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-                                  epoch_end - epoch_start)
-                                  .count();
+        //   epoch_end = std::chrono::system_clock::now();
+        //   auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+        //                           epoch_end - epoch_start)
+        //                           .count();
 
-          // report throughput every report_period seconds
-          if (time_elapsed >= report_period) {
-            double throughput = (double)count / (double)time_elapsed;
-            log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
-                      throughput);
-            epoch += 1;
+        //   // report throughput every report_period seconds
+        //   if (time_elapsed >= report_period) {
+        //     double throughput = (double)count / (double)time_elapsed;
+        //     log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
+        //               throughput);
+        //     epoch += 1;
 
-            auto latency = (double)1000000 / throughput;
-            UserFeedback feedback;
-            log->info("[Epoch {}] latency is {} microseconds.", epoch,
-                      latency);
+        //     auto latency = (double)1000000 / throughput;
+        //     UserFeedback feedback;
+        //     log->info("[Epoch {}] latency is {} microseconds.", epoch,
+        //               latency);
 
-            feedback.set_uid(ip + ":" + std::to_string(thread_id));
-            feedback.set_latency(latency);
-            feedback.set_throughput(throughput);
+        //     feedback.set_uid(ip + ":" + std::to_string(thread_id));
+        //     feedback.set_latency(latency);
+        //     feedback.set_throughput(throughput);
 
-            for (const auto &key_latency_pair : observed_latency) {
-              if (key_latency_pair.second.first > 1) {
-                UserFeedback_KeyLatency *kl = feedback.add_key_latency();
-                kl->set_key(key_latency_pair.first);
-                kl->set_latency(key_latency_pair.second.first);
-              }
-            }
+        //     for (const auto &key_latency_pair : observed_latency) {
+        //       if (key_latency_pair.second.first > 1) {
+        //         UserFeedback_KeyLatency *kl = feedback.add_key_latency();
+        //         kl->set_key(key_latency_pair.first);
+        //         kl->set_latency(key_latency_pair.second.first);
+        //       }
+        //     }
 
-            string serialized_latency;
-            feedback.SerializeToString(&serialized_latency);
+        //     string serialized_latency;
+        //     feedback.SerializeToString(&serialized_latency);
 
-            for (const MonitoringThread &thread : monitoring_threads) {
-              kZmqUtil->send_string(
-                  serialized_latency,
-                  &pushers[thread.feedback_report_connect_address()]);
-            }
+        //     for (const MonitoringThread &thread : monitoring_threads) {
+        //       kZmqUtil->send_string(
+        //           serialized_latency,
+        //           &pushers[thread.feedback_report_connect_address()]);
+        //     }
 
-            count = 0;
-            observed_latency.clear();
-            epoch_start = std::chrono::system_clock::now();
-          }
+        //     count = 0;
+        //     observed_latency.clear();
+        //     epoch_start = std::chrono::system_clock::now();
+        //   }
 
-          benchmark_end = std::chrono::system_clock::now();
-          total_time = std::chrono::duration_cast<std::chrono::seconds>(
-                           benchmark_end - benchmark_start)
-                           .count();
-          if (total_time > time) {
-            break;
-          }
-        }
+        //   benchmark_end = std::chrono::system_clock::now();
+        //   total_time = std::chrono::duration_cast<std::chrono::seconds>(
+        //                    benchmark_end - benchmark_start)
+        //                    .count();
+        //   if (total_time > time) {
+        //     break;
+        //   }
+        // }
         log->info("Total number of request is {}, number of key_address_puller is {}, number of response_puller is {}", counters[0], counters[1],counters[2]);
         log->info("Finished");
         counters[0] = 0;
