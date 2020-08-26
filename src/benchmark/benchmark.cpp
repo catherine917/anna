@@ -175,7 +175,7 @@ void run(const unsigned &thread_id,
         // auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
         //                       benchmark_end - benchmark_start)
         //                       .count();
-        // unsigned epoch = 1;
+        unsigned epoch = 1;
 
         string keys[num_keys];
         for(unsigned i = 0; i < num_keys; i++) {
@@ -196,7 +196,7 @@ void run(const unsigned &thread_id,
             LWWPairLattice<string> val(
                 TimestampValuePair<string>(ts, string(length, 'a')));
             client.put_async(keys[i], serialize(val), LatticeType::LWW);
-            receive_key_addr();
+            receive_key_addr(&client);
             counters[0] += 1;
             count += 1;
           }
