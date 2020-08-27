@@ -45,12 +45,12 @@ void receive(KvsClientInterface *client, unsigned long *counter) {
   }
 }
 
-void receive_key_addr(KvsClientInterface *client) {
-  vector<KeyResponse> responses = client->receive_key_addr();
-  while (responses.size() == 0) {
-    responses = client->receive_key_addr();
-  }
-}
+// void receive_key_addr(KvsClientInterface *client) {
+//   vector<KeyAddressResponse> responses = client->receive_key_addr();
+//   while (responses.size() == 0) {
+//     responses = client->receive_key_addr();
+//   }
+// }
 
 int sample(int n, unsigned &seed, double base,
            map<unsigned, double> &sum_probs) {
@@ -205,7 +205,7 @@ void run(const unsigned &thread_id,
             LWWPairLattice<string> val(
                 TimestampValuePair<string>(ts, string(length, 'a')));
             client.put_async(key, serialize(val), LatticeType::LWW);
-            receive_key_addr(&client);
+            client.receive_key_addr();
             counters[0] += 1;
             count += 1;
           }
