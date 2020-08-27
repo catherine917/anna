@@ -24,8 +24,7 @@ Default output format [None]:
 - Enter the folder which contains the private key (hydro.k8s.local.pem) and run the commond below
 ```
 aws ec2 run-instances --image-id ami-010511def9bba7d61  --count 2 --instance-
-type r4.2xlarge --key-name hydro.k8s.local  --security-group-ids sg-01013f2077c
-5f9ef3
+type r4.2xlarge --key-name hydro.k8s.local  --security-group-ids sg-01013f2077c5f9ef3
 // you can modify the count parameter to the number which you wanted. Other parameters can remain default.
 ```
 ### Code update and build

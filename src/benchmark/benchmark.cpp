@@ -177,7 +177,20 @@ void run(const unsigned &thread_id,
         //                       .count();
         unsigned epoch = 1;
 
-        string keys[num_keys];
+        // string keys[num_keys];
+        // for(unsigned i = 0; i < num_keys; i++) {
+        //   unsigned k;
+        //   if(zipf > 0) {
+        //     k = sample(num_keys, seed, base, sum_probs);
+        //   }else {
+        //     k = rand_r(&seed) % (num_keys) + 1;
+        //   }
+        //   Key key = generate_key(k);
+        //   keys[i] =  key;
+        // }
+        
+        log->info("Start benchmarking");
+        auto benchmark_start = std::chrono::system_clock::now();
         for(unsigned i = 0; i < num_keys; i++) {
           unsigned k;
           if(zipf > 0) {
@@ -186,16 +199,12 @@ void run(const unsigned &thread_id,
             k = rand_r(&seed) % (num_keys) + 1;
           }
           Key key = generate_key(k);
-          keys[i] =  key;
-        }
-        auto benchmark_start = std::chrono::system_clock::now();
-        for(unsigned i = 0; i < num_keys; i++) {
           if(type == "M") {
             auto req_start = std::chrono::system_clock::now();
             unsigned ts = generate_timestamp(thread_id);
             LWWPairLattice<string> val(
                 TimestampValuePair<string>(ts, string(length, 'a')));
-            client.put_async(keys[i], serialize(val), LatticeType::LWW);
+            client.put_async(key, serialize(val), LatticeType::LWW);
             receive_key_addr(&client);
             counters[0] += 1;
             count += 1;
@@ -206,7 +215,7 @@ void run(const unsigned &thread_id,
                                   benchmark_end - benchmark_start)
                                   .count();
         double throughput = (double)count / (double)total_time;
-            log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
+        log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
                       throughput);
         log->info("PUT requests finished.");
         
