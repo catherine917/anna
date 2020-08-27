@@ -13,7 +13,7 @@
 //  limitations under the License.
 
 #include <stdlib.h>
-
+#include <iostream>
 #include "benchmark.pb.h"
 #include "client/kvs_client.hpp"
 #include "kvs_threads.hpp"
@@ -45,12 +45,12 @@ void receive(KvsClientInterface *client, unsigned long *counter) {
   }
 }
 
-// void receive_key_addr(KvsClientInterface *client) {
-//   vector<KeyAddressResponse> responses = client->receive_key_addr();
-//   while (responses.size() == 0) {
-//     responses = client->receive_key_addr();
-//   }
-// }
+void receive_key_addr(KvsClientInterface *client, Key key) {
+  int res = client->receive_key_addr(key);
+  while (res == 0) {
+    res = client->receive_key_addr(key);
+  }
+}
 
 int sample(int n, unsigned &seed, double base,
            map<unsigned, double> &sum_probs) {
@@ -192,6 +192,7 @@ void run(const unsigned &thread_id,
         log->info("Start benchmarking");
         auto benchmark_start = std::chrono::system_clock::now();
         for(unsigned i = 0; i < num_keys; i++) {
+          // log->info("index is {}", i);
           unsigned k;
           if(zipf > 0) {
             k = sample(num_keys, seed, base, sum_probs);
@@ -205,7 +206,7 @@ void run(const unsigned &thread_id,
             LWWPairLattice<string> val(
                 TimestampValuePair<string>(ts, string(length, 'a')));
             client.put_async(key, serialize(val), LatticeType::LWW);
-            client.receive_key_addr();
+            receive_key_addr(&client, key);
             counters[0] += 1;
             count += 1;
           }
