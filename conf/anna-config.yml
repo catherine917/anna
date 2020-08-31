@@ -6,13 +6,13 @@ threads:
   memory: 4
   ebs: 4
   routing: 4
-  benchmark: 12
+  benchmark: 8
 replication:
-  memory: 2
+  memory: 14
   ebs: 0
   minimum: 1
   local: 4
 policy:
   elasticity: false
-  selective-rep: false
+  selective-rep: true
   tiering: false
