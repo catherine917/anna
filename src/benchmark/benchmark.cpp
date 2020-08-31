@@ -207,18 +207,27 @@ void run(const unsigned &thread_id,
                 TimestampValuePair<string>(ts, string(length, 'a')));
             client.put_async(key, serialize(val), LatticeType::LWW);
             receive_key_addr(&client, key);
+            client.get_async(key);
             counters[0] += 1;
-            count += 1;
+            count += 2;
           }
         }
-        auto benchmark_end = std::chrono::system_clock::now();
-        auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
+        if(counters[2] == count) {
+          auto benchmark_end = std::chrono::system_clock::now();
+          auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
                                   benchmark_end - benchmark_start)
                                   .count();
-        double throughput = (double)count / (double)total_time;
-        log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
-                      throughput);
-        log->info("PUT requests finished.");
+          double throughput = (double)count / (double)total_time;
+          log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
+                        throughput);
+        }
+        // auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
+        //                           benchmark_end - benchmark_start)
+        //                           .count();
+        // double throughput = (double)count / (double)total_time;
+        // log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
+        //               throughput);
+        // log->info("PUT requests finished.");
         
         // for(unsigned r = 0; r < num_keys; r++) {
         //   receive(&client);
