@@ -38,14 +38,14 @@ double get_zipf_prob(unsigned rank, double skew, double base) {
   return pow(rank, -1 * skew) / base;
 }
 
-void receive(KvsClientInterface *client, unsigned long *counter) {
-  vector<KeyResponse> responses = client->receive_async(counter);
+void receive(KvsClientInterface *client, unsigned long *counters) {
+  vector<KeyResponse> responses = client->receive_async(counters);
   while (responses.size() == 0) {
-    responses = client->receive_async(counter);
+    responses = client->receive_async(counters);
   }
 }
 
-void receive_rep(KvsClientInterface *client, unsigned long *counter) {
+void receive_rep(KvsClientInterface *client, unsigned long *counters) {
   vector<KeyResponse> responses = client->receive_rep();
   while (responses.size() != counters[0]) {
     responses = client->receive_rep();
