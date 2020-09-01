@@ -45,7 +45,7 @@ void receive(KvsClientInterface *client, unsigned long *counter) {
   }
 }
 
-void receive_rep(KvsClientInterface *client) {
+void receive_rep(KvsClientInterface *client, unsigned long *counter) {
   vector<KeyResponse> responses = client->receive_rep();
   while (responses.size() != counters[0]) {
     responses = client->receive_rep();
