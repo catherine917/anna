@@ -45,6 +45,13 @@ void receive(KvsClientInterface *client, unsigned long *counter) {
   }
 }
 
+void receive_rep(KvsClientInterface *client) {
+  vector<KeyResponse> responses = client->receive_rep();
+  while (responses.size() != counters[0]) {
+    responses = client->receive_rep();
+  }
+}
+
 void receive_key_addr(KvsClientInterface *client, Key key) {
   int res = client->receive_key_addr(key);
   while (res == 0) {
@@ -208,19 +215,18 @@ void run(const unsigned &thread_id,
             client.put_async(key, serialize(val), LatticeType::LWW);
             receive_key_addr(&client, key);
             client.get_async(key);
-            counters[0] += 1;
+            counters[0] += 2;
             count += 2;
           }
         }
-        if(counters[2] == count) {
-          auto benchmark_end = std::chrono::system_clock::now();
-          auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
-                                  benchmark_end - benchmark_start)
-                                  .count();
-          double throughput = (double)count / (double)total_time;
-          log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
-                        throughput);
-        }
+        receive_rep(&client, counters);
+        auto benchmark_end = std::chrono::system_clock::now();
+        auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
+                                benchmark_end - benchmark_start)
+                                .count();
+        double throughput = (double)count / (double)total_time;
+        log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
+                      throughput);
         // auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
         //                           benchmark_end - benchmark_start)
         //                           .count();
