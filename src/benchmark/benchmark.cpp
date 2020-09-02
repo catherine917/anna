@@ -45,10 +45,12 @@ void receive(KvsClientInterface *client, unsigned long *counters) {
   }
 }
 
-void receive_rep(KvsClientInterface *client, unsigned long *counters) {
-  vector<KeyResponse> responses = client->receive_rep();
-  while (responses.size() != counters[0]) {
+void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned int num_keys) {
+  vector<KeyResponse> responses;
+  while (counters[3] < num_keys) {
+    // log->info("receieved response total is {}", counters[3]);
     responses = client->receive_rep();
+    counters[3] += responses.size();
   }
 }
 
@@ -157,7 +159,7 @@ void run(const unsigned &thread_id,
         unsigned report_period = stoi(v[4]);
         unsigned time = stoi(v[5]);
         double zipf = stod(v[6]);
-        unsigned long counters[3] = {0, 0, 0};
+        unsigned long counters[4] = {0, 0, 0, 0};
 
         map<unsigned, double> sum_probs;
         double base;
@@ -198,6 +200,7 @@ void run(const unsigned &thread_id,
         
         log->info("Start benchmarking");
         auto benchmark_start = std::chrono::system_clock::now();
+        // vector<string> keys;
         for(unsigned i = 0; i < num_keys; i++) {
           // log->info("index is {}", i);
           unsigned k;
@@ -208,7 +211,6 @@ void run(const unsigned &thread_id,
           }
           Key key = generate_key(k);
           if(type == "M") {
-            auto req_start = std::chrono::system_clock::now();
             unsigned ts = generate_timestamp(thread_id);
             LWWPairLattice<string> val(
                 TimestampValuePair<string>(ts, string(length, 'a')));
@@ -219,7 +221,8 @@ void run(const unsigned &thread_id,
             count += 2;
           }
         }
-        receive_rep(&client, counters);
+        log->info("Finish sending requests");
+        receive_rep(&client, counters, num_keys);
         auto benchmark_end = std::chrono::system_clock::now();
         auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
                                 benchmark_end - benchmark_start)
