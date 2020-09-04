@@ -400,6 +400,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
                               std::chrono::system_clock::now() - work_start)
                               .count();
       working_time += time_elapsed;
+      log->info("gossip handler time elapsed in microseconds is: {}\n", time_elapsed);
       working_time_map[4] += time_elapsed;
     }
 
@@ -490,22 +491,6 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
 
       log->info("times replication_response_handler runs is:{}\n", replication_counter);
       replication_counter = 0;
-
-      for(map<Key, KeyReplication>::iterator iter = key_replication_map.begin(); iter != key_replication_map.end(); iter++) {
-        log->info("key in key_replication_map is: {}\n\
-        global_replication_memory is: {}\n\
-        local_replication_memory is: {}\n", 
-        iter->first, key_replication_map[iter->first].global_replication_[Tier::MEMORY], 
-        key_replication_map[iter->first].local_replication_[Tier::MEMORY]);
-      }
-
-      unsigned long key_num = 0;
-      for (const auto &key_pair: stored_key_map) {
-        log->info("key in stored_key_map is: {}\n", key_pair.first);
-        key_num++;
-      }
-      log->info("key number in stored_key_map is: {}\n", key_num);
-      key_num = 0;
     }
 
     // gossip updates to other threads
@@ -556,6 +541,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
                               .count();
 
       working_time += time_elapsed;
+      log->info("send gossip time elapsed in microseconds is: {}\n", time_elapsed);
       working_time_map[9] += time_elapsed;
     }
 
