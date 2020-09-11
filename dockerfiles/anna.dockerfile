@@ -25,6 +25,7 @@ USER root
 WORKDIR $HYDRO_HOME/anna
 RUN git remote remove origin && git remote add origin https://github.com/$repo_org/anna
 RUN git fetch origin && git checkout -b $build_branch origin/$source_branch
+RUN git submodule init && git submodule update && cd common && git pull origin master
 RUN bash scripts/build.sh -j4 -bRelease
 WORKDIR /
 
