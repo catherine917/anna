@@ -50,11 +50,11 @@ fi
 # none are specified, we use hydro-project/anna by default.
 git remote remove origin
 if [[ -z "$REPO_ORG" ]]; then
-  REPO_ORG="hydro-project"
+  REPO_ORG="catherine917"
 fi
 
 if [[ -z "$REPO_BRANCH" ]]; then
-  REPO_BRANCH="master"
+  REPO_BRANCH="benchmark"
 fi
 
 git remote add origin https://github.com/$REPO_ORG/anna
