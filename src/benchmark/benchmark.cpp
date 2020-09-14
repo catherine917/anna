@@ -383,6 +383,7 @@ void run(const unsigned &thread_id,
         counters[0] = 0;
         counters[1] = 0;
         counters[2] = 0;
+        counters[3] = 0;
         UserFeedback feedback;
 
         feedback.set_uid(ip + ":" + std::to_string(thread_id));
