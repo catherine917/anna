@@ -221,6 +221,7 @@ void run(const unsigned &thread_id,
                 client.put_async(key, serialize(val), LatticeType::LWW);
                 receive_key_addr(&client, key);
                 client.get_async(key);
+                receive_key_addr(&client, key);
                 counters[0] += 2;
                 count += 2;
               }
