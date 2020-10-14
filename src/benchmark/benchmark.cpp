@@ -50,7 +50,7 @@ void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned i
   counters[3] = 0;
   while (counters[3] < num_keys) {
     responses = client->receive_rep();
-    std::cout << responses.size();
+    std::cout << responses.size() << std::endl;
     counters[3] += responses.size();
   }
 }
@@ -202,7 +202,7 @@ void run(const unsigned &thread_id,
         log->info("Start benchmarking");
         auto benchmark_start = std::chrono::system_clock::now();
         // vector<string> keys;
-        unsigned loop = 10;
+        unsigned loop = 20;
         unsigned num_reqs = num_keys / loop;
         log->info("Number of requests per loop is {}", num_reqs);
         unsigned loop_counter = 0; 
