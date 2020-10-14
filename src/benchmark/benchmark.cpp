@@ -201,28 +201,34 @@ void run(const unsigned &thread_id,
         log->info("Start benchmarking");
         auto benchmark_start = std::chrono::system_clock::now();
         // vector<string> keys;
-        for(unsigned i = 0; i < num_keys; i++) {
-          // log->info("index is {}", i);
-          unsigned k;
-          if(zipf > 0) {
-            k = sample(num_keys, seed, base, sum_probs);
-          }else {
-            k = rand_r(&seed) % (num_keys) + 1;
+        unsigned loop = 10;
+        unsigned num_reqs = num_keys / loop;
+        unsigned loop_counter = 0; 
+        while (loop_counter < loop) {
+            for(unsigned i = 0; i < num_reqs; i++) {
+            // log->info("index is {}", i);
+            unsigned k;
+            if(zipf > 0) {
+              k = sample(num_keys, seed, base, sum_probs);
+            }else {
+              k = rand_r(&seed) % (num_keys) + 1;
+            }
+            Key key = generate_key(k);
+            if(type == "M") {
+              unsigned ts = generate_timestamp(thread_id);
+              LWWPairLattice<string> val(
+                  TimestampValuePair<string>(ts, string(length, 'a')));
+              client.put_async(key, serialize(val), LatticeType::LWW);
+              receive_key_addr(&client, key);
+              client.get_async(key);
+              counters[0] += 2;
+              count += 2;
+            }
           }
-          Key key = generate_key(k);
-          if(type == "M") {
-            unsigned ts = generate_timestamp(thread_id);
-            LWWPairLattice<string> val(
-                TimestampValuePair<string>(ts, string(length, 'a')));
-            client.put_async(key, serialize(val), LatticeType::LWW);
-            receive_key_addr(&client, key);
-            client.get_async(key);
-            counters[0] += 2;
-            count += 2;
-          }
+          log->info("Finish sending requests");
+          receive_rep(&client, counters, num_reqs);
+          loop_counter++;
         }
-        log->info("Finish sending requests");
-        receive_rep(&client, counters, num_keys);
         auto benchmark_end = std::chrono::system_clock::now();
         auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
                                 benchmark_end - benchmark_start)
