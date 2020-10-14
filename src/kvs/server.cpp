@@ -489,29 +489,8 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
       }
       log_start = current_time;
 
-<<<<<<< HEAD
-      // log->info("times replication_response_handler runs is:{}\n", replication_counter);
-      // replication_counter = 0;
-
-      // for(map<Key, KeyReplication>::iterator iter = key_replication_map.begin(); iter != key_replication_map.end(); iter++) {
-      //   log->info("key in key_replication_map is: {}\n\
-      //   global_replication_memory is: {}\n\
-      //   local_replication_memory is: {}\n", 
-      //   iter->first, key_replication_map[iter->first].global_replication_[Tier::MEMORY], 
-      //   key_replication_map[iter->first].local_replication_[Tier::MEMORY]);
-      // }
-
-      // unsigned long key_num = 0;
-      // for (const auto &key_pair: stored_key_map) {
-      //   log->info("key in stored_key_map is: {}\n", key_pair.first);
-      //   key_num++;
-      // }
-      // log->info("key number in stored_key_map is: {}\n", key_num);
-      // key_num = 0;
-=======
       log->info("times replication_response_handler runs is:{}\n", replication_counter);
       replication_counter = 0;
->>>>>>> 0c806b90b9db934d5006da39b3face2fccbcb29e
     }
 
     // gossip updates to other threads
