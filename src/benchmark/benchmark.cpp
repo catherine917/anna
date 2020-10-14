@@ -48,7 +48,6 @@ void receive(KvsClientInterface *client, unsigned long *counters) {
 void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned int num_keys) {
   vector<KeyResponse> responses;
   while (counters[3] < num_keys) {
-    // log->info("receieved response total is {}", counters[3]);
     responses = client->receive_rep();
     counters[3] += responses.size();
   }
@@ -203,30 +202,32 @@ void run(const unsigned &thread_id,
         // vector<string> keys;
         unsigned loop = 10;
         unsigned num_reqs = num_keys / loop;
+        log->info("Number of requests per loop is {}", num_reqs);
         unsigned loop_counter = 0; 
         while (loop_counter < loop) {
             for(unsigned i = 0; i < num_reqs; i++) {
             // log->info("index is {}", i);
-            unsigned k;
-            if(zipf > 0) {
-              k = sample(num_keys, seed, base, sum_probs);
-            }else {
-              k = rand_r(&seed) % (num_keys) + 1;
-            }
-            Key key = generate_key(k);
-            if(type == "M") {
-              unsigned ts = generate_timestamp(thread_id);
-              LWWPairLattice<string> val(
-                  TimestampValuePair<string>(ts, string(length, 'a')));
-              client.put_async(key, serialize(val), LatticeType::LWW);
-              receive_key_addr(&client, key);
-              client.get_async(key);
-              counters[0] += 2;
-              count += 2;
-            }
+              unsigned k;
+              if(zipf > 0) {
+                k = sample(num_keys, seed, base, sum_probs);
+              }else {
+                k = rand_r(&seed) % (num_keys) + 1;
+              }
+              Key key = generate_key(k);
+              if(type == "M") {
+                unsigned ts = generate_timestamp(thread_id);
+                LWWPairLattice<string> val(
+                    TimestampValuePair<string>(ts, string(length, 'a')));
+                client.put_async(key, serialize(val), LatticeType::LWW);
+                receive_key_addr(&client, key);
+                client.get_async(key);
+                counters[0] += 2;
+                count += 2;
+              }
           }
           log->info("Finish sending requests");
           receive_rep(&client, counters, num_reqs);
+          counters[3] = 0;
           loop_counter++;
         }
         auto benchmark_end = std::chrono::system_clock::now();
