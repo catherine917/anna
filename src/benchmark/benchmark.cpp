@@ -220,7 +220,6 @@ void run(const unsigned &thread_id,
                 unsigned ts = generate_timestamp(thread_id);
                 LWWPairLattice<string> val(
                     TimestampValuePair<string>(ts, string(length, 'a')));
-                benchmark_start = std::chrono::system_clock::now();
                 client.put_async(key, serialize(val), LatticeType::LWW);
                 receive_key_addr(&client, key);
                 client.get_async(key);
