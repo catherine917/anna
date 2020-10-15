@@ -202,7 +202,7 @@ void run(const unsigned &thread_id,
         
         log->info("Start benchmarking");
         // vector<string> keys;
-        unsigned loop = 20;
+        unsigned loop = 10;
         unsigned num_reqs = num_keys / loop;
         log->info("Number of requests per loop is {}", num_reqs);
         unsigned loop_counter = 0; 
