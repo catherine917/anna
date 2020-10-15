@@ -234,7 +234,7 @@ void run(const unsigned &thread_id,
           loop_counter++;
         }
         auto benchmark_end = std::chrono::system_clock::now();
-        log->info("Total received responses is {}", conters[2]);
+        log->info("Total received responses is {}", counters[2]);
         auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
                                 benchmark_end - benchmark_start)
                                 .count();
