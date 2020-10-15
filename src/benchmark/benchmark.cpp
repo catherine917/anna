@@ -53,6 +53,7 @@ void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned i
     std::cout << responses.size() << std::endl;
     counters[3] += responses.size();
   }
+  std::cout << "total responses is " << counters[3] << std::endl;
 }
 
 void receive_key_addr(KvsClientInterface *client, Key key) {
