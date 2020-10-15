@@ -54,7 +54,6 @@ void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned i
     counters[3] += responses.size();
     counters[4] += responses.size();
   }
-  std::cout << "total responses is " << counters[4] << std::endl;
 }
 
 void receive_key_addr(KvsClientInterface *client, Key key) {
@@ -235,6 +234,7 @@ void run(const unsigned &thread_id,
           loop_counter++;
         }
         auto benchmark_end = std::chrono::system_clock::now();
+        log->info("Total received responses is {}", conters[4]);
         auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
                                 benchmark_end - benchmark_start)
                                 .count();
