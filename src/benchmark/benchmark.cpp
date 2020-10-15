@@ -47,13 +47,14 @@ void receive(KvsClientInterface *client, unsigned long *counters) {
 
 void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned int num_keys) {
   vector<KeyResponse> responses;
+  unsigned total += counters[3];
   counters[3] = 0;
   while (counters[3] < num_keys) {
     responses = client->receive_rep();
-    std::cout << responses.size() << std::endl;
+    // std::cout << responses.size() << std::endl;
     counters[3] += responses.size();
   }
-  std::cout << "total responses is " << counters[3] << std::endl;
+  std::cout << "total responses is " << total << std::endl;
 }
 
 void receive_key_addr(KvsClientInterface *client, Key key) {
