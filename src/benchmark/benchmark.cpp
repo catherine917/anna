@@ -45,10 +45,10 @@ void receive(KvsClientInterface *client, unsigned long *counters) {
   }
 }
 
-void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned int num_keys) {
+void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned int receive_num) {
   vector<KeyResponse> responses;
   counters[3] = 0;
-  while (counters[3] < num_keys) {
+  while (counters[3] < receive_num) {
     responses = client->receive_rep();
     // std::cout << responses.size() << std::endl;
     counters[3] += responses.size();
@@ -161,6 +161,7 @@ void run(const unsigned &thread_id,
         unsigned report_period = stoi(v[4]);
         unsigned time = stoi(v[5]);
         double zipf = stod(v[6]);
+        unsigned loop = stod(v[7]);
         unsigned long counters[4] = {0, 0, 0, 0};
 
         map<unsigned, double> sum_probs;
@@ -202,7 +203,6 @@ void run(const unsigned &thread_id,
         
         log->info("Start benchmarking");
         // vector<string> keys;
-        unsigned loop = 10;
         unsigned num_reqs = num_keys / loop;
         log->info("Number of requests per loop is {}", num_reqs);
         unsigned loop_counter = 0; 
@@ -230,7 +230,8 @@ void run(const unsigned &thread_id,
               }
           }
           log->info("Finish sending requests");
-          receive_rep(&client, counters, num_reqs);
+          unsigned receive_num = num_reqs * 2 - 100;
+          receive_rep(&client, counters, receive_num);
           loop_counter++;
         }
         auto benchmark_end = std::chrono::system_clock::now();
