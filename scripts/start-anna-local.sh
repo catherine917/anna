@@ -25,7 +25,7 @@ if [ "$1" = "y" ] || [ "$1" = "yes" ]; then
   ./scripts/build.sh
 fi
 
-cp conf/anna-local.yml conf/anna-config.yml
+# cp conf/anna-local.yml conf/anna-config.yml
 
 ./build/target/kvs/anna-monitor &
 MPID=$!
