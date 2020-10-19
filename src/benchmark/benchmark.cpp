@@ -50,9 +50,8 @@ void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned i
   counters[3] = 0;
   while (counters[3] < receive_num) {
     responses = client->receive_rep();
-    // std::cout << responses.size() << std::endl;
     counters[3] += responses.size();
-    counters[2] += responses.size();
+    counters[4] += responses.size();
   }
 }
 
@@ -162,7 +161,7 @@ void run(const unsigned &thread_id,
         unsigned time = stoi(v[5]);
         double zipf = stod(v[6]);
         unsigned loop = stod(v[7]);
-        unsigned long counters[4] = {0, 0, 0, 0};
+        unsigned long counters[5] = {0, 0, 0, 0, 0};
 
         map<unsigned, double> sum_probs;
         double base;
@@ -221,7 +220,8 @@ void run(const unsigned &thread_id,
                 unsigned ts = generate_timestamp(thread_id);
                 LWWPairLattice<string> val(
                     TimestampValuePair<string>(ts, string(length, 'a')));
-                client.put_async(key, serialize(val), LatticeType::LWW);
+                string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
+                // log->info("Request id is {}", req_id);
                 receive_key_addr(&client, key);
                 client.get_async(key);
                 receive_key_addr(&client, key);
@@ -232,10 +232,14 @@ void run(const unsigned &thread_id,
           log->info("Finish sending requests");
           unsigned receive_num = num_reqs * 2 - 100;
           receive_rep(&client, counters, receive_num);
+          log->info("Receive responses for one loop is {}", counters[3]);
           loop_counter++;
         }
+        if(loop_counter == loop) {
+          receive_rep(&client, counters, 100 * loop);
+        }
         auto benchmark_end = std::chrono::system_clock::now();
-        log->info("Total received responses is {}", counters[2]);
+        log->info("Total received responses is {}", counters[4]);
         auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
                                 benchmark_end - benchmark_start)
                                 .count();
@@ -396,6 +400,7 @@ void run(const unsigned &thread_id,
         counters[1] = 0;
         counters[2] = 0;
         counters[3] = 0;
+        counters[4] = 0;
         UserFeedback feedback;
 
         feedback.set_uid(ip + ":" + std::to_string(thread_id));
