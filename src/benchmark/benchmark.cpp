@@ -25,7 +25,6 @@ unsigned kDefaultLocalReplication;
 
 ZmqUtil zmq_util;
 ZmqUtilInterface *kZmqUtil = &zmq_util;
-
 double get_base(unsigned N, double skew) {
   double base = 0;
   for (unsigned k = 1; k <= N; k++) {
@@ -45,13 +44,20 @@ void receive(KvsClientInterface *client, unsigned long *counters) {
   }
 }
 
-void receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned int receive_num) {
-  vector<KeyResponse> responses;
-  counters[3] = 0;
-  while (counters[3] < receive_num) {
-    responses = client->receive_rep();
-    counters[3] += responses.size();
-    counters[4] += responses.size();
+void receive_rep(KvsClientInterface *client, unsigned long *counters, bool isLastLoop, int rep_num) {
+  counters[4] = 0; //track pending get responses
+  counters[5] = 0; //track pending put responses
+  client->receive_rep(counters);
+  // std::cout << "get pending size is " << counters[4] << std::endl;
+  // std::cout << "put pending size is " << counters[5] << std::endl;
+  if(isLastLoop) {
+    while (counters[4] != 0 && counters[5] != 0){
+        client->receive_rep(counters);
+    }
+  }else {
+    while (counters[4] > rep_num && counters[5] > rep_num){
+        client->receive_rep(counters);
+    }
   }
 }
 
@@ -161,7 +167,8 @@ void run(const unsigned &thread_id,
         unsigned time = stoi(v[5]);
         double zipf = stod(v[6]);
         unsigned loop = stod(v[7]);
-        unsigned long counters[5] = {0, 0, 0, 0, 0};
+        const unsigned COUNTERS_NUM = 6;
+        unsigned long counters[COUNTERS_NUM] = {0, 0, 0, 0, 0, 0};
 
         map<unsigned, double> sum_probs;
         double base;
@@ -228,18 +235,33 @@ void run(const unsigned &thread_id,
                 counters[0] += 2;
                 count += 2;
               }
+              else if(type == "P") {
+                unsigned ts = generate_timestamp(thread_id);
+                LWWPairLattice<string> val(
+                    TimestampValuePair<string>(ts, string(length, 'a')));
+                string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
+                // log->info("Request id is {}", req_id);
+                receive_key_addr(&client, key);
+                counters[0] += 1;
+                count += 1;
+              }
           }
-          log->info("Finish sending requests");
-          unsigned receive_num = num_reqs * 2 - 100;
-          receive_rep(&client, counters, receive_num);
-          log->info("Receive responses for one loop is {}", counters[3]);
+          // unsigned receive_num = 0
+          // if(type == "M") {
+          //   receive_num = num_reqs * 2 - 100;
+          // }else {
+          //   receive_num = num_reqs - 100;
+          // }
+          log->info("Loop {}: finish sending requests", loop_counter);
+          receive_rep(&client, counters, false, num_reqs*0.1);
           loop_counter++;
         }
         if(loop_counter == loop) {
-          receive_rep(&client, counters, 100 * loop);
+          log->info("Loop {}: finish sending requests", loop_counter);
+          receive_rep(&client, counters, true, num_reqs*0.1);
         }
         auto benchmark_end = std::chrono::system_clock::now();
-        log->info("Total received responses is {}", counters[4]);
+        log->info("Total received responses is {}", counters[3]);
         auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
                                 benchmark_end - benchmark_start)
                                 .count();
@@ -396,11 +418,9 @@ void run(const unsigned &thread_id,
         // }
         log->info("Total number of request is {}, number of key_address_puller is {}, number of response_puller is {}", counters[0], counters[1],counters[2]);
         log->info("Finished");
-        counters[0] = 0;
-        counters[1] = 0;
-        counters[2] = 0;
-        counters[3] = 0;
-        counters[4] = 0;
+        for (int i = 0; i < COUNTERS_NUM; i++) {
+          counters[i] = 0;
+        }
         UserFeedback feedback;
 
         feedback.set_uid(ip + ":" + std::to_string(thread_id));
