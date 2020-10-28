@@ -61,10 +61,10 @@ void receive_rep(KvsClientInterface *client, unsigned long *counters, bool isLas
   }
 }
 
-void receive_key_addr(KvsClientInterface *client, Key key) {
-  int res = client->receive_key_addr(key);
+void receive_key_addr(KvsClientInterface *client, Key key, unsigned long *counters) {
+  int res = client->receive_key_addr(key, counters);
   while (res == 0) {
-    res = client->receive_key_addr(key);
+    res = client->receive_key_addr(key, counters);
   }
 }
 
@@ -212,6 +212,7 @@ void run(const unsigned &thread_id,
         unsigned num_reqs = num_keys / loop;
         log->info("Number of requests per loop is {}", num_reqs);
         unsigned loop_counter = 0; 
+        
         auto benchmark_start = std::chrono::system_clock::now();
         while (loop_counter < loop) {
             for(unsigned i = 0; i < num_reqs; i++) {
@@ -223,15 +224,16 @@ void run(const unsigned &thread_id,
                 k = rand_r(&seed) % (num_keys) + 1;
               }
               Key key = generate_key(k);
+              // log->info("Key is {}", key);
               if(type == "M") {
                 unsigned ts = generate_timestamp(thread_id);
                 LWWPairLattice<string> val(
                     TimestampValuePair<string>(ts, string(length, 'a')));
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
                 // log->info("Request id is {}", req_id);
-                receive_key_addr(&client, key);
+                receive_key_addr(&client, key, counters);
                 client.get_async(key);
-                receive_key_addr(&client, key);
+                receive_key_addr(&client, key, counters);
                 counters[0] += 2;
                 count += 2;
               }
@@ -241,7 +243,7 @@ void run(const unsigned &thread_id,
                     TimestampValuePair<string>(ts, string(length, 'a')));
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
                 // log->info("Request id is {}", req_id);
-                receive_key_addr(&client, key);
+                receive_key_addr(&client, key, counters);
                 counters[0] += 1;
                 count += 1;
               }
