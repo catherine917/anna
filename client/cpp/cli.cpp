@@ -57,6 +57,7 @@ void handle_request(KvsClientInterface *client, string input) {
 
     LWWPairLattice<string> lww_lattice =
         deserialize_lww(responses[0].tuples(0).payload());
+    std::cout << parse_footprints(responses[0]);
     std::cout << lww_lattice.reveal().value << std::endl;
   } else if (v[0] == "GET_CAUSAL") {
     // currently this mode is only for testing purpose
@@ -114,6 +115,7 @@ void handle_request(KvsClientInterface *client, string input) {
     } else {
       std::cout << "Failure!" << std::endl;
     }
+    std::cout << parse_footprints(response);
   } else if (v[0] == "PUT_CAUSAL") {
     // currently this mode is only for testing purpose
     Key key = v[1];

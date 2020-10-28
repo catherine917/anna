@@ -25,6 +25,8 @@ void user_request_handler(
     unsigned &rep_count, unsigned &req_count, unsigned long *counters) {
   KeyRequest request;
   request.ParseFromString(serialized);
+  Footprint* footprint = request.add_footprints();
+  set_footprint_info(footprint, wt.public_ip(), wt.tid(), Action::RECEIVE);
   counters[0]++;
   req_count += 1;
   KeyResponse response;
@@ -32,6 +34,7 @@ void user_request_handler(
   response.set_response_id(request.request_id());
 
   response.set_type(request.type());
+  copy_footprints(request, response);
 
   bool succeed;
   RequestType request_type = request.type();
@@ -68,7 +71,7 @@ void user_request_handler(
           counters[6]++;
           pending_requests[key].push_back(
               PendingRequest(request_type, tuple.lattice_type(), payload,
-                             response_address, response_id));
+                             response_address, response_id, request));
         }
       } else { // if we know the responsible threads, we process the request
         KeyTuple *tp = response.add_tuples();
@@ -132,12 +135,14 @@ void user_request_handler(
       counters[6]++;
       pending_requests[key].push_back(
           PendingRequest(request_type, tuple.lattice_type(), payload,
-                         response_address, response_id));
+                         response_address, response_id, request));
     }
   }
 
   if (response.tuples_size() > 0 && request.response_address() != "") {
     string serialized_response;
+    Footprint* footprint = response.add_footprints();
+    set_footprint_info(footprint, wt.public_ip(), wt.tid(), Action::SEND);
     response.SerializeToString(&serialized_response);
     rep_count += 1;
     counters[7]++;

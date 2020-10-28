@@ -815,15 +815,16 @@ using SerializerMap =
 struct PendingRequest {
   PendingRequest() {}
   PendingRequest(RequestType type, LatticeType lattice_type, string payload,
-                 Address addr, string response_id)
+                 Address addr, string response_id, KeyRequest request)
       : type_(type), lattice_type_(std::move(lattice_type)),
-        payload_(std::move(payload)), addr_(addr), response_id_(response_id) {}
+        payload_(std::move(payload)), addr_(addr), response_id_(response_id), request_(request) {}
 
   RequestType type_;
   LatticeType lattice_type_;
   string payload_;
   Address addr_;
   string response_id_;
+  KeyRequest request_;
 };
 
 struct PendingGossip {

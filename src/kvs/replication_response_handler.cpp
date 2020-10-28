@@ -93,8 +93,11 @@ void replication_response_handler(
           KeyTuple *tp = response.add_tuples();
           tp->set_key(key);
           tp->set_error(AnnaError::WRONG_THREAD);
+          copy_footprints((KeyRequest)request.request_, response);
 
           string serialized_response;
+          Footprint* footprint = response.add_footprints();
+          set_footprint_info(footprint, wt.public_ip(), wt.tid(), Action::SEND);
           response.SerializeToString(&serialized_response);
           kZmqUtil->send_string(serialized_response, &pushers[request.addr_]);
         } else if (responsible && request.addr_ == "") {
@@ -166,7 +169,10 @@ void replication_response_handler(
           key_access_tracker[key].insert(now);
           access_count += 1;
 
+          copy_footprints((KeyRequest)request.request_, response);
           string serialized_response;
+          Footprint* footprint = response.add_footprints();
+          set_footprint_info(footprint, wt.public_ip(), wt.tid(), Action::SEND);
           response.SerializeToString(&serialized_response);
           kZmqUtil->send_string(serialized_response, &pushers[request.addr_]);
         }
