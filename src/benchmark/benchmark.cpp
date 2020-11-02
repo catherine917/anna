@@ -23,6 +23,11 @@ unsigned kBenchmarkThreadNum;
 unsigned kRoutingThreadCount;
 unsigned kDefaultLocalReplication;
 
+// request footprints tracking parameters
+int largeFootprintSize;
+unsigned long long highLatency;
+bool track_request_footprints = false;
+
 ZmqUtil zmq_util;
 ZmqUtilInterface *kZmqUtil = &zmq_util;
 
@@ -38,11 +43,12 @@ double get_zipf_prob(unsigned rank, double skew, double base) {
   return pow(rank, -1 * skew) / base;
 }
 
-void receive(KvsClientInterface *client, unsigned long *counter) {
+vector<KeyResponse> receive(KvsClientInterface *client, unsigned long *counter) {
   vector<KeyResponse> responses = client->receive_async(counter);
   while (responses.size() == 0) {
     responses = client->receive_async(counter);
   }
+  return responses;
 }
 
 int sample(int n, unsigned &seed, double base,
@@ -80,6 +86,19 @@ int sample(int n, unsigned &seed, double base,
 
 string generate_key(unsigned n) {
   return string(8 - std::to_string(n).length(), '0') + std::to_string(n);
+}
+
+void log_request_footprints(logger log, const vector<KeyResponse> &responses) {
+  if (track_request_footprints) {
+    for (const KeyResponse& resp : responses) {
+      auto footprints_size = resp.footprints_size();
+      auto first_timestamp = resp.footprints(0).timestamp();
+      auto last_timestamp = resp.footprints(footprints_size - 1).timestamp();
+      if (last_timestamp - first_timestamp >= highLatency || footprints_size >= largeFootprintSize) {
+        log->info(parse_footprints(resp));
+      }
+    }
+  }
 }
 
 void run(const unsigned &thread_id,
@@ -257,10 +276,12 @@ void run(const unsigned &thread_id,
 
             client.put_async(key, serialize(val), LatticeType::LWW);
             counters[0] += 1;
-            receive(&client, counters);
+            auto put_responses = receive(&client, counters);
+            log_request_footprints(log, put_responses);
             client.get_async(key);
             counters[0] += 1;
-            receive(&client, counters);
+            auto get_responses = receive(&client, counters);
+            log_request_footprints(log, get_responses);
             count += 2;
             auto req_end = std::chrono::system_clock::now();
 
@@ -270,7 +291,6 @@ void run(const unsigned &thread_id,
                     .count() /
                 2;
 
-            log->info("key latency in microseconds is {}", key_latency);
             if (observed_latency.find(key) == observed_latency.end()) {
               observed_latency[key].first = key_latency;
               observed_latency[key].second = 1;
@@ -412,6 +432,13 @@ int main(int argc, char *argv[]) {
   kRoutingThreadCount = threads["routing"].as<int>();
   kBenchmarkThreadNum = threads["benchmark"].as<int>();
   kDefaultLocalReplication = conf["replication"]["local"].as<unsigned>();
+
+  YAML::Node footprints = conf["footprints"];
+  if (footprints.IsDefined() && !footprints.IsNull()) {
+    track_request_footprints = true;
+    largeFootprintSize = footprints["size"].as<int>();
+    highLatency = footprints["latency"].as<unsigned long long>();
+  }
 
   vector<std::thread> benchmark_threads;
 
