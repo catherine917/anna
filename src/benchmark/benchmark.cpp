@@ -255,12 +255,12 @@ void run(const unsigned &thread_id,
           //   receive_num = num_reqs - 100;
           // }
           log->info("Loop {}: finish sending requests", loop_counter);
-          receive_rep(&client, counters, false, num_reqs*0.1);
+          receive_rep(&client, counters, false, num_reqs*0.9);
           loop_counter++;
         }
         if(loop_counter == loop) {
           log->info("Loop {}: finish sending requests", loop_counter);
-          receive_rep(&client, counters, true, num_reqs*0.1);
+          receive_rep(&client, counters, true, 0);
         }
         auto benchmark_end = std::chrono::system_clock::now();
         log->info("Total received responses is {}", counters[3]);

@@ -32,7 +32,7 @@
 #define DATA_REDISTRIBUTE_THRESHOLD 50
 
 // Define the gossip period (frequency)
-#define PERIOD 10000000 // 10 seconds
+#define PERIOD 60000000 // 10 seconds
 
 typedef KVStore<Key, LWWPairLattice<string>> MemoryLWWKVS;
 typedef KVStore<Key, SetLattice<string>> MemorySetKVS;
@@ -777,7 +777,7 @@ public:
     PriorityValue input_value;
     input_value.ParseFromString(serialized);
 
-    int fd = open(fname(key).c_str(), O_RDWR | O_CREAT);
+    int fd = open(fname(key).c_str(), O_RDWR | O_CREAT, 0777);
     if (fd == -1) {
       std::cerr << "Failed to open file" << std::endl;
       return 0;
