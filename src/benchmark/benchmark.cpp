@@ -237,10 +237,10 @@ void run(const unsigned &thread_id,
                     TimestampValuePair<string>(ts, string(length, 'a')));
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
                 // log->info("Request id is {}", req_id);
-                auto put_responses = receive_key_addr(&client, key, counters);
+                receive_key_addr(&client, key, counters);
                 // log_request_footprints(log, put_responses);
                 client.get_async(key);
-                auto get_responses = receive_key_addr(&client, key, counters);
+                receive_key_addr(&client, key, counters);
                 // log_request_footprints(log, get_responses);
                 counters[0] += 2;
                 count += 2;
