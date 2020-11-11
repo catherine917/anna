@@ -9,6 +9,11 @@ unsigned kBenchmarkThreadNum;
 unsigned kRoutingThreadCount;
 unsigned kDefaultLocalReplication;
 
+// request footprints tracking parameters	
+int largeFootprintSize;	
+unsigned long long highLatency;	
+bool track_request_footprints = false;
+
 ZmqUtil zmq_util;
 ZmqUtilInterface *kZmqUtil = &zmq_util;
 double get_base(unsigned N, double skew) {
@@ -30,21 +35,22 @@ void receive(KvsClientInterface *client, unsigned long *counters) {
   }
 }
 
-void receive_rep(KvsClientInterface *client, unsigned long *counters, bool isLastLoop, int rep_num) {
+vector<KeyResponse> receive_rep(KvsClientInterface *client, unsigned long *counters, bool isLastLoop, int rep_num) {
   counters[4] = 0; //track pending get responses
   counters[5] = 0; //track pending put responses
-  client->receive_rep(counters);
+  vector<KeyResponse> responses =  client->receive_rep(counters);
   // std::cout << "get pending size is " << counters[4] << std::endl;
   // std::cout << "put pending size is " << counters[5] << std::endl;
   if(isLastLoop) {
     while (counters[4] != 0 && counters[5] != 0){
-        client->receive_rep(counters);
+        responses =  client->receive_rep(counters);
     }
   }else {
     while (counters[4] > rep_num && counters[5] > rep_num){
-        client->receive_rep(counters);
+        responses =  client->receive_rep(counters);
     }
   }
+  return responses;
 }
 
 void receive_key_addr(KvsClientInterface *client, Key key, unsigned long *counters) {
@@ -86,6 +92,20 @@ int sample(int n, unsigned &seed, double base,
 
   return zipf_value;
 }
+
+void log_request_footprints(logger log, const vector<KeyResponse> &responses) {	
+  if (track_request_footprints) {	
+    for (const KeyResponse& resp : responses) {	
+      auto footprints_size = resp.footprints_size();	
+      auto first_timestamp = resp.footprints(0).timestamp();	
+      auto last_timestamp = resp.footprints(footprints_size - 1).timestamp();	
+      if (last_timestamp - first_timestamp >= highLatency || footprints_size >= largeFootprintSize) {	
+        log->info(parse_footprints(resp));	
+      }	
+    }	
+  }	
+}	
+
 
 string generate_key(unsigned n) {
   return string(8 - std::to_string(n).length(), '0') + std::to_string(n);
@@ -217,9 +237,11 @@ void run(const unsigned &thread_id,
                     TimestampValuePair<string>(ts, string(length, 'a')));
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
                 // log->info("Request id is {}", req_id);
-                receive_key_addr(&client, key, counters);
+                auto put_responses = receive_key_addr(&client, key, counters);
+                // log_request_footprints(log, put_responses);
                 client.get_async(key);
-                receive_key_addr(&client, key, counters);
+                auto get_responses = receive_key_addr(&client, key, counters);
+                // log_request_footprints(log, get_responses);
                 counters[0] += 2;
                 count += 2;
               }
@@ -230,6 +252,7 @@ void run(const unsigned &thread_id,
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
                 // log->info("Request id is {}", req_id);
                 receive_key_addr(&client, key, counters);
+                // log_request_footprints(log, put_responses);
                 counters[0] += 1;
                 count += 1;
               }
@@ -241,7 +264,8 @@ void run(const unsigned &thread_id,
           //   receive_num = num_reqs - 100;
           // }
           log->info("Loop {}: finish sending requests", loop_counter);
-          receive_rep(&client, counters, false, num_reqs*0.9);
+          auto responses = receive_rep(&client, counters, false, num_reqs*0.9);
+          log_request_footprints(log, responses);
           loop_counter++;
         }
         if(loop_counter == loop) {
@@ -474,6 +498,13 @@ int main(int argc, char *argv[]) {
   YAML::Node monitoring = user["monitoring"];
   for (const YAML::Node &node : monitoring) {
     monitoring_threads.push_back(MonitoringThread(node.as<Address>()));
+  }
+
+  YAML::Node footprints = conf["footprints"];	
+  if (footprints.IsDefined() && !footprints.IsNull()) {	
+    track_request_footprints = true;	
+    largeFootprintSize = footprints["size"].as<int>();	
+    highLatency = footprints["latency"].as<unsigned long long>();	
   }
 
   YAML::Node threads = conf["threads"];
