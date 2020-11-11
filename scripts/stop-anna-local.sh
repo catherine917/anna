@@ -27,5 +27,5 @@ if [ "$1" = "y" ]; then
   rm *log*
 fi
 
-rm conf/anna-config.yml
+# rm conf/anna-config.yml
 rm pids
