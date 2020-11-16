@@ -183,7 +183,7 @@ void run(const unsigned &thread_id,
 
           if (type == "G") {
             client.get_async(key);
-            receive(&client);
+            // receive(&client);
             count += 1;
           } else if (type == "P") {
             unsigned ts = generate_timestamp(thread_id);
@@ -319,7 +319,7 @@ void run(const unsigned &thread_id,
               TimestampValuePair<string>(ts, string(length, 'a')));
 
           client.put_async(generate_key(i), serialize(val), LatticeType::LWW);
-          receive(&client);
+          // receive(&client);
         }
 
         auto warmup_time = std::chrono::duration_cast<std::chrono::seconds>(
