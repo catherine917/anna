@@ -270,7 +270,7 @@ void run(const unsigned &thread_id,
                     .count() /
                 2;
 
-            log->info("key latency in microseconds is {}", key_latency);
+            // log->info("key latency in microseconds is {}", key_latency);
             if (observed_latency.find(key) == observed_latency.end()) {
               observed_latency[key].first = key_latency;
               observed_latency[key].second = 1;
