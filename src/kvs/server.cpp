@@ -497,7 +497,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
     gossip_end = std::chrono::system_clock::now();
     if (std::chrono::duration_cast<std::chrono::microseconds>(gossip_end -
                                                               gossip_start)
-            .count() >= PERIOD && false) {
+            .count() >= PERIOD) {
       auto work_start = std::chrono::system_clock::now();
       // only gossip if we have changes
       if (local_changeset.size() > 0) {
