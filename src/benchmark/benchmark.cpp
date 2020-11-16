@@ -170,62 +170,6 @@ void run(const unsigned &thread_id,
                               .count();
         unsigned epoch = 1;
 
-        string keys[num_keys];
-        for(unsigned i = 0; i < num_keys; i++) {
-          unsigned k;
-          if(zipf > 0) {
-            k = sample(num_keys, seed, base, sum_probs);
-          }else {
-            k = rand_r(&seed) % (num_keys) + 1;
-          }
-          Key key = generate_key(k);
-          keys[i] =  key;
-        }
-        // for(unsigned i = 0; i < num_keys; i++) {
-        //   if(type == "M") {
-        //     auto req_start = std::chrono::system_clock::now();
-        //     unsigned ts = generate_timestamp(thread_id);
-        //     LWWPairLattice<string> val(
-        //         TimestampValuePair<string>(ts, string(length, 'a')));
-        //     benchmark_start = std::chrono::system_clock::now();
-        //     client.put_async(keys[i], serialize(val), LatticeType::LWW);
-        //     counters[0] += 1;
-        //     count += 1;
-        //   }
-        // }
-        // log->info("PUT requests finished.");
-        
-        // for(unsigned r = 0; r < num_keys; r++) {
-        //   receive(&client);
-        //   counters[1] += 1;
-        // }
-        // log->info("PUT requests receive finished.");
-        
-        // for(unsigned i = 0; i < num_keys; i++) {
-        //   if(type == "M") {
-        //     // auto req_start = std::chrono::system_clock::now();
-        //     // unsigned ts = generate_timestamp(thread_id);
-        //     // LWWPairLattice<string> val(
-        //     //     TimestampValuePair<string>(ts, string(length, 'a')));
-        //     // benchmark_start = std::chrono::system_clock::now();
-        //     client.get_async(keys[i]);
-        //     counters[0] += 1;
-        //     count += 1;
-        //   }
-        // }
-        // r = 0;
-        // while(r < num_keys) {
-        //   receive(&client);
-        //   r += 1;
-        //   counters[1] += 1;
-        // }
-        // benchmark_end = std::chrono::system_clock::now();
-        // auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-        //                           benchmark_end - benchmark_start)
-        //                           .count();
-        // log->info("time elapsed is {}", time_elapsed);
-        // double throughput = (double)count / (double)time_elapsed;
-        // log->info("Throughput is {} ops/seconds.", throughput);
         while (true) {
           unsigned k;
           if (zipf > 0) {
@@ -239,7 +183,7 @@ void run(const unsigned &thread_id,
 
           if (type == "G") {
             client.get_async(key);
-            // receive(&client);
+            receive(&client);
             count += 1;
           } else if (type == "P") {
             unsigned ts = generate_timestamp(thread_id);
@@ -375,7 +319,7 @@ void run(const unsigned &thread_id,
               TimestampValuePair<string>(ts, string(length, 'a')));
 
           client.put_async(generate_key(i), serialize(val), LatticeType::LWW);
-          // receive(&client);
+          receive(&client);
         }
 
         auto warmup_time = std::chrono::duration_cast<std::chrono::seconds>(
