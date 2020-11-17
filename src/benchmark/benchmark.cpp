@@ -258,7 +258,7 @@ void run(const unsigned &thread_id,
 
           if (type == "G") {
             client.get_async(key);
-            // receive(&client);
+            receive(&client, counters);
             count += 1;
           } else if (type == "P") {
             unsigned ts = generate_timestamp(thread_id);
