@@ -35,19 +35,27 @@ void receive(KvsClientInterface *client, unsigned long *counters) {
   }
 }
 
-vector<KeyResponse> receive_rep(KvsClientInterface *client, unsigned long *counters, bool isLastLoop, int rep_num) {
+vector<KeyResponse> receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned loop_counter, unsigned req_num, unsigned thread_id) {
   counters[4] = 0; //track pending get responses
   counters[5] = 0; //track pending put responses
-  vector<KeyResponse> responses =  client->receive_rep(counters);
-  // std::cout << "get pending size is " << counters[4] << std::endl;
-  // std::cout << "put pending size is " << counters[5] << std::endl;
-  if(isLastLoop) {
-    while (counters[4] != 0 && counters[5] != 0){
-        responses =  client->receive_rep(counters);
-    }
-  }else {
-    while (counters[4] > rep_num && counters[5] > rep_num){
-        responses =  client->receive_rep(counters);
+  vector<KeyResponse> responses;
+  bool next = false;
+  long begin = loop_counter * req_num;
+  long end = begin + req_num - 1;
+  while(!next) {
+    vector<KeyResponse> responses =  client->receive_rep(counters);
+    for(unsigned i = 0; i < responses.size(); i++) {
+       string responseId = responses[i].response_id();
+       vector<string> v;
+       split(responseId, '_', v);
+       unsigned int tid = std::stoi(v[1]);
+       long rid = std::stol(v[2]);
+       std::cout << "thread id is " << tid << std::endl;
+       std::cout << "rid is " << rid << std::endl;
+       if ( tid == thread_id && (rid >= begin || rid <= end) ) {
+           next = true;
+           break;
+       }
     }
   }
   return responses;
@@ -220,6 +228,7 @@ void run(const unsigned &thread_id,
         unsigned loop_counter = 0; 
         
         auto benchmark_start = std::chrono::system_clock::now();
+        auto loop_start = std::chrono::system_clock::now();
         while (loop_counter < loop) {
             for(unsigned i = 0; i < num_reqs; i++) {
             // log->info("index is {}", i);
@@ -235,13 +244,11 @@ void run(const unsigned &thread_id,
                 unsigned ts = generate_timestamp(thread_id);
                 LWWPairLattice<string> val(
                     TimestampValuePair<string>(ts, string(length, 'a')));
+                loop_start = std::chrono::system_clock::now();
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
-                // log->info("Request id is {}", req_id);
                 receive_key_addr(&client, key, counters);
-                // log_request_footprints(log, put_responses);
                 client.get_async(key);
                 receive_key_addr(&client, key, counters);
-                // log_request_footprints(log, get_responses);
                 counters[0] += 2;
                 count += 2;
               }
@@ -250,27 +257,23 @@ void run(const unsigned &thread_id,
                 LWWPairLattice<string> val(
                     TimestampValuePair<string>(ts, string(length, 'a')));
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
-                // log->info("Request id is {}", req_id);
                 receive_key_addr(&client, key, counters);
-                // log_request_footprints(log, put_responses);
                 counters[0] += 1;
                 count += 1;
               }
           }
-          // unsigned receive_num = 0
-          // if(type == "M") {
-          //   receive_num = num_reqs * 2 - 100;
-          // }else {
-          //   receive_num = num_reqs - 100;
-          // }
           log->info("Loop {}: finish sending requests", loop_counter);
-          auto responses = receive_rep(&client, counters, false, num_reqs*0.9);
+          auto responses = receive_rep(&client, counters, loop_counter, num_reqs, thread_id);
+          auto loop_end = std::chrono::system_clock::now();
           log_request_footprints(log, responses);
           loop_counter++;
-        }
-        if(loop_counter == loop) {
-          log->info("Loop {}: finish sending requests", loop_counter);
-          receive_rep(&client, counters, true, 0);
+          auto loop_time = std::chrono::duration_cast<std::chrono::seconds>(
+                                loop_end - loop_start)
+                                .count();
+          double loop_throughput = (double)(counters[4] + counters[5]) / (double)loop_time;
+          log->info("[Loop {}] Throughput is {} ops/seconds.", loop_counter,
+                      loop_throughput);
+
         }
         auto benchmark_end = std::chrono::system_clock::now();
         log->info("Total received responses is {}", counters[3]);
@@ -280,154 +283,7 @@ void run(const unsigned &thread_id,
         double throughput = (double)count / (double)total_time;
         log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
                       throughput);
-        // auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
-        //                           benchmark_end - benchmark_start)
-        //                           .count();
-        // double throughput = (double)count / (double)total_time;
-        // log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
-        //               throughput);
-        // log->info("PUT requests finished.");
-        
-        // for(unsigned r = 0; r < num_keys; r++) {
-        //   receive(&client);
-        //   counters[1] += 1;
-        // }
-        // log->info("PUT requests receive finished.");
-        
-        // for(unsigned i = 0; i < num_keys; i++) {
-        //   if(type == "M") {
-        //     // auto req_start = std::chrono::system_clock::now();
-        //     // unsigned ts = generate_timestamp(thread_id);
-        //     // LWWPairLattice<string> val(
-        //     //     TimestampValuePair<string>(ts, string(length, 'a')));
-        //     // benchmark_start = std::chrono::system_clock::now();
-        //     client.get_async(keys[i]);
-        //     counters[0] += 1;
-        //     count += 1;
-        //   }
-        // }
-        // r = 0;
-        // while(r < num_keys) {
-        //   receive(&client);
-        //   r += 1;
-        //   counters[1] += 1;
-        // }
-        // benchmark_end = std::chrono::system_clock::now();
-        // auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-        //                           benchmark_end - benchmark_start)
-        //                           .count();
-        // log->info("time elapsed is {}", time_elapsed);
-        // double throughput = (double)count / (double)time_elapsed;
-        // log->info("Throughput is {} ops/seconds.", throughput);
-        // while (true) {
-        //   unsigned k;
-        //   if (zipf > 0) {
-        //     k = sample(num_keys, seed, base, sum_probs);
-        //   } else {
-        //     k = rand_r(&seed) % (num_keys) + 1;
-        //   }
 
-        //   Key key = generate_key(k);
-        //   // log->info("Key:{}", key);
-
-        //   if (type == "G") {
-        //     client.get_async(key);
-        //     // receive(&client);
-        //     count += 1;
-        //   } else if (type == "P") {
-        //     unsigned ts = generate_timestamp(thread_id);
-        //     LWWPairLattice<string> val(
-        //         TimestampValuePair<string>(ts, string(length, 'a')));
-
-        //     client.put_async(key, serialize(val), LatticeType::LWW);
-        //     receive(&client, counters);
-        //     count += 1;
-        //   } else if (type == "M") {
-        //     auto req_start = std::chrono::system_clock::now();
-        //     unsigned ts = generate_timestamp(thread_id);
-        //     LWWPairLattice<string> val(
-        //         TimestampValuePair<string>(ts, string(length, 'a')));
-
-        //     client.put_async(key, serialize(val), LatticeType::LWW);
-        //     counters[0] += 1;
-        //     receive(&client, counters);
-        //     client.get_async(key);
-        //     counters[0] += 1;
-        //     receive(&client, counters);
-        //     count += 2;
-        //     auto req_end = std::chrono::system_clock::now();
-
-        //     double key_latency =
-        //         (double)std::chrono::duration_cast<std::chrono::microseconds>(
-        //             req_end - req_start)
-        //             .count() /
-        //         2;
-
-        //     if (observed_latency.find(key) == observed_latency.end()) {
-        //       observed_latency[key].first = key_latency;
-        //       observed_latency[key].second = 1;
-        //     } else {
-        //       observed_latency[key].first =
-        //           (observed_latency[key].first * observed_latency[key].second +
-        //            key_latency) /
-        //           (observed_latency[key].second + 1);
-        //       observed_latency[key].second += 1;
-        //     }
-        //   } else {
-        //     log->info("{} is an invalid request type.", type);
-        //   }
-
-        //   epoch_end = std::chrono::system_clock::now();
-        //   auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-        //                           epoch_end - epoch_start)
-        //                           .count();
-
-        //   // report throughput every report_period seconds
-        //   if (time_elapsed >= report_period) {
-        //     double throughput = (double)count / (double)time_elapsed;
-        //     log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
-        //               throughput);
-        //     epoch += 1;
-
-        //     auto latency = (double)1000000 / throughput;
-        //     UserFeedback feedback;
-        //     log->info("[Epoch {}] latency is {} microseconds.", epoch,
-        //               latency);
-
-        //     feedback.set_uid(ip + ":" + std::to_string(thread_id));
-        //     feedback.set_latency(latency);
-        //     feedback.set_throughput(throughput);
-
-        //     for (const auto &key_latency_pair : observed_latency) {
-        //       if (key_latency_pair.second.first > 1) {
-        //         UserFeedback_KeyLatency *kl = feedback.add_key_latency();
-        //         kl->set_key(key_latency_pair.first);
-        //         kl->set_latency(key_latency_pair.second.first);
-        //       }
-        //     }
-
-        //     string serialized_latency;
-        //     feedback.SerializeToString(&serialized_latency);
-
-        //     for (const MonitoringThread &thread : monitoring_threads) {
-        //       kZmqUtil->send_string(
-        //           serialized_latency,
-        //           &pushers[thread.feedback_report_connect_address()]);
-        //     }
-
-        //     count = 0;
-        //     observed_latency.clear();
-        //     epoch_start = std::chrono::system_clock::now();
-        //   }
-
-        //   benchmark_end = std::chrono::system_clock::now();
-        //   total_time = std::chrono::duration_cast<std::chrono::seconds>(
-        //                    benchmark_end - benchmark_start)
-        //                    .count();
-        //   if (total_time > time) {
-        //     break;
-        //   }
-        // }
         log->info("Total number of request is {}, number of key_address_puller is {}, number of response_puller is {}", counters[0], counters[1],counters[2]);
         log->info("Finished");
         for (int i = 0; i < COUNTERS_NUM; i++) {
