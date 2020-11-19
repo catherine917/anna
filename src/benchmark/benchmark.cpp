@@ -42,6 +42,9 @@ vector<KeyResponse> receive_rep(KvsClientInterface *client, unsigned long *count
   bool next = false;
   long begin = loop_counter * req_num;
   long end = begin + req_num - 1;
+  std::cout<< "begin:" << begin << std::endl;
+  std::cout<< "end:" << end << std::endl;
+  std::cout << next << std::endl;
   while(!next) {
     vector<KeyResponse> responses =  client->receive_rep(counters);
     for(unsigned i = 0; i < responses.size(); i++) {
@@ -52,7 +55,7 @@ vector<KeyResponse> receive_rep(KvsClientInterface *client, unsigned long *count
        long rid = std::stol(v[2]);
        std::cout << "thread id is " << tid << std::endl;
        std::cout << "rid is " << rid << std::endl;
-       if ( tid == thread_id && (rid >= begin || rid <= end) ) {
+       if ( tid == thread_id && rid >= begin && rid <= end ) {
            next = true;
            break;
        }
@@ -267,12 +270,11 @@ void run(const unsigned &thread_id,
           auto loop_end = std::chrono::system_clock::now();
           log_request_footprints(log, responses);
           loop_counter++;
-          auto loop_time = std::chrono::duration_cast<std::chrono::seconds>(
+          auto loop_time = std::chrono::duration_cast<std::chrono::microseconds>(
                                 loop_end - loop_start)
                                 .count();
-          double loop_throughput = (double)(counters[4] + counters[5]) / (double)loop_time;
-          log->info("[Loop {}] Throughput is {} ops/seconds.", loop_counter,
-                      loop_throughput);
+          log->info("[Loop {}] latency is {} microseconds.", loop_counter,
+                      loop_time);
 
         }
         auto benchmark_end = std::chrono::system_clock::now();
