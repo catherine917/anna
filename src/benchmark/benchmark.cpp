@@ -258,7 +258,8 @@ void run(const unsigned &thread_id,
 
           if (type == "G") {
             client.get_async(key);
-            receive(&client, counters);
+            auto responses = receive(&client, counters);
+            log_request_footprints(log, responses);
             count += 1;
           } else if (type == "P") {
             unsigned ts = generate_timestamp(thread_id);
@@ -266,7 +267,8 @@ void run(const unsigned &thread_id,
                 TimestampValuePair<string>(ts, string(length, 'a')));
 
             client.put_async(key, serialize(val), LatticeType::LWW);
-            receive(&client, counters);
+            auto responses = receive(&client, counters);
+            log_request_footprints(log, responses);
             count += 1;
           } else if (type == "M") {
             auto req_start = std::chrono::system_clock::now();
