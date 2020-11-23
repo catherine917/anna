@@ -38,6 +38,7 @@ void receive(KvsClientInterface *client, unsigned long *counters) {
 vector<KeyResponse> receive_rep(KvsClientInterface *client, unsigned long *counters, unsigned loop_counter, unsigned req_num, unsigned thread_id) {
   counters[4] = 0; //track pending get responses
   counters[5] = 0; //track pending put responses
+  unsigned int time_out = 0;
   vector<KeyResponse> responses;
   bool next = false;
   long begin = loop_counter * req_num;
@@ -46,19 +47,26 @@ vector<KeyResponse> receive_rep(KvsClientInterface *client, unsigned long *count
   std::cout<< "end:" << end << std::endl;
   std::cout << next << std::endl;
   while(!next) {
-    vector<KeyResponse> responses =  client->receive_rep(counters);
-    for(unsigned i = 0; i < responses.size(); i++) {
-       string responseId = responses[i].response_id();
-       vector<string> v;
-       split(responseId, '_', v);
-       unsigned int tid = std::stoi(v[1]);
-       long rid = std::stol(v[2]);
-       std::cout << "thread id is " << tid << std::endl;
-       std::cout << "rid is " << rid << std::endl;
-       if ( tid == thread_id && rid >= begin && rid <= end ) {
-           next = true;
-           break;
-       }
+    responses =  client->receive_rep(counters);
+    if(responses.size() > 0) {
+      for(unsigned i = 0; i < responses.size(); i++) {
+        string responseId = responses[i].response_id();
+        vector<string> v;
+        split(responseId, '_', v);
+        unsigned int tid = std::stoi(v[1]);
+        long rid = std::stol(v[2]);
+        //  std::cout << "thread id is " << tid << std::endl;
+        //  std::cout << "rid is " << rid << std::endl;
+        if ( tid == thread_id && rid >= begin && rid <= end ) {
+            next = true;
+            break;
+        }
+      }
+    }else {
+      ++time_out;
+      if(time_out >= 3) {
+        next = true;
+      }
     }
   }
   return responses;
@@ -205,24 +213,12 @@ void run(const unsigned &thread_id,
         size_t count = 0;
         // auto benchmark_start = std::chrono::system_clock::now();
         // auto benchmark_end = std::chrono::system_clock::now();
-        // auto epoch_start = std::chrono::system_clock::now();
-        // auto epoch_end = std::chrono::system_clock::now();
+        auto epoch_start = std::chrono::system_clock::now();
+        auto epoch_end = std::chrono::system_clock::now();
         // auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
         //                       benchmark_end - benchmark_start)
         //                       .count();
         unsigned epoch = 1;
-
-        // string keys[num_keys];
-        // for(unsigned i = 0; i < num_keys; i++) {
-        //   unsigned k;
-        //   if(zipf > 0) {
-        //     k = sample(num_keys, seed, base, sum_probs);
-        //   }else {
-        //     k = rand_r(&seed) % (num_keys) + 1;
-        //   }
-        //   Key key = generate_key(k);
-        //   keys[i] =  key;
-        // }
         
         log->info("Start benchmarking");
         // vector<string> keys;
@@ -231,7 +227,6 @@ void run(const unsigned &thread_id,
         unsigned loop_counter = 0; 
         
         auto benchmark_start = std::chrono::system_clock::now();
-        auto loop_start = std::chrono::system_clock::now();
         while (loop_counter < loop) {
             for(unsigned i = 0; i < num_reqs; i++) {
             // log->info("index is {}", i);
@@ -242,12 +237,10 @@ void run(const unsigned &thread_id,
                 k = rand_r(&seed) % (num_keys) + 1;
               }
               Key key = generate_key(k);
-              // log->info("Key is {}", key);
               if(type == "M") {
                 unsigned ts = generate_timestamp(thread_id);
                 LWWPairLattice<string> val(
                     TimestampValuePair<string>(ts, string(length, 'a')));
-                loop_start = std::chrono::system_clock::now();
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
                 receive_key_addr(&client, key, counters);
                 client.get_async(key);
@@ -267,24 +260,33 @@ void run(const unsigned &thread_id,
           }
           log->info("Loop {}: finish sending requests", loop_counter);
           auto responses = receive_rep(&client, counters, loop_counter, num_reqs, thread_id);
-          auto loop_end = std::chrono::system_clock::now();
+          epoch_end = std::chrono::system_clock::now();
+          auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+                                  epoch_end - epoch_start)
+                                  .count();
           log_request_footprints(log, responses);
           loop_counter++;
-          auto loop_time = std::chrono::duration_cast<std::chrono::microseconds>(
-                                loop_end - loop_start)
-                                .count();
-          log->info("[Loop {}] latency is {} microseconds.", loop_counter,
-                      loop_time);
-
+          if (time_elapsed >= report_period) {
+            double throughput = (double)count / (double)time_elapsed;
+            log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
+                      throughput);
+            epoch += 1;
+          }
         }
         auto benchmark_end = std::chrono::system_clock::now();
-        log->info("Total received responses is {}", counters[3]);
         auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
-                                benchmark_end - benchmark_start)
-                                .count();
-        double throughput = (double)count / (double)total_time;
-        log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
-                      throughput);
+                           benchmark_end - benchmark_start)
+                           .count();
+        if (total_time > time) {
+            break;
+        }
+        // log->info("Total received responses is {}", counters[3]);
+        // auto total_time = std::chrono::duration_cast<std::chrono::seconds>(
+        //                         benchmark_end - benchmark_start)
+        //                         .count();
+        // double throughput = (double)count / (double)total_time;
+        // log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
+        //               throughput);
 
         log->info("Total number of request is {}, number of key_address_puller is {}, number of response_puller is {}", counters[0], counters[1],counters[2]);
         log->info("Finished");
