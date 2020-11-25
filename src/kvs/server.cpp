@@ -373,7 +373,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
     if (pollitems[3].revents & ZMQ_POLLIN) {
       auto work_start = std::chrono::system_clock::now();
       
-      string serialized = kZmqUtil->recv_string(&request_puller);
+      string serialized = kZmqUtil->recv_string(&request_puller, log);
       user_request_handler(access_count, seed, serialized, log,
                            global_hash_rings, local_hash_rings,
                            pending_requests, key_access_tracker, stored_key_map,
@@ -408,7 +408,7 @@ void run(unsigned thread_id, Address public_ip, Address private_ip,
     if (pollitems[5].revents & ZMQ_POLLIN) {
       auto work_start = std::chrono::system_clock::now();
 
-      string serialized = kZmqUtil->recv_string(&replication_response_puller);
+      string serialized = kZmqUtil->recv_string(&replication_response_puller, log);
       replication_response_handler(
           seed, access_count, log, serialized, global_hash_rings,
           local_hash_rings, pending_requests, pending_gossip,
