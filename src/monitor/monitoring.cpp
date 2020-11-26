@@ -42,7 +42,7 @@ HashRingUtil hash_ring_util;
 HashRingUtilInterface *kHashRingUtil = &hash_ring_util;
 
 int main(int argc, char *argv[]) {
-  auto log = spdlog::basic_logger_mt("monitoring_log", "logs/monitor_log.txt", true);
+  auto log = spdlog::basic_logger_mt("monitoring_log", "monitor_log.txt", true);
   log->flush_on(spdlog::level::info);
 
   if (argc != 1) {
