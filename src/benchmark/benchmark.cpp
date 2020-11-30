@@ -55,8 +55,6 @@ vector<KeyResponse> receive_rep(KvsClientInterface *client, unsigned long *count
         split(responseId, '_', v);
         unsigned int tid = std::stoi(v[1]);
         long rid = std::stol(v[2]);
-        //  std::cout << "thread id is " << tid << std::endl;
-        //  std::cout << "rid is " << rid << std::endl;
         if ( tid == thread_id && rid >= begin && rid <= end ) {
             next = true;
             break;
@@ -253,6 +251,11 @@ void run(const unsigned &thread_id,
                 LWWPairLattice<string> val(
                     TimestampValuePair<string>(ts, string(length, 'a')));
                 string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
+                receive_key_addr(&client, key, counters);
+                counters[0] += 1;
+                count += 1;
+              }else if(type == "G") {
+                client.get_async(key);
                 receive_key_addr(&client, key, counters);
                 counters[0] += 1;
                 count += 1;
