@@ -274,6 +274,8 @@ void run(const unsigned &thread_id,
             log->info("[Epoch {}] Throughput is {} ops/seconds.", epoch,
                       throughput);
             epoch += 1;
+            count = 0;
+            epoch_start = std::chrono::system_clock::now();
           }
         }
         auto benchmark_end = std::chrono::system_clock::now();
