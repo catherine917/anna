@@ -223,44 +223,50 @@ void run(const unsigned &thread_id,
         unsigned num_reqs = num_keys / loop;
         log->info("Number of requests per loop is {}", num_reqs);
         unsigned loop_counter = 0; 
+
+        double get_proportion = 0.5;
+        if (type == "M") {
+          get_proportion = stod(v[8]);
+        } else if (type == "P") {
+          get_proportion = 0.0;
+        } else if (type == "G") {
+          get_proportion = 1.0;
+        }
+        unsigned get_ops_per_loop = unsigned(num_reqs * get_proportion);
+        unsigned put_ops_per_loop = num_reqs - get_ops_per_loop;
         
         auto benchmark_start = std::chrono::system_clock::now();
         while (loop_counter < loop) {
-            for(unsigned i = 0; i < num_reqs; i++) {
-            // log->info("index is {}", i);
-              unsigned k;
-              if(zipf > 0) {
-                k = sample(num_keys, seed, base, sum_probs);
-              }else {
-                k = rand_r(&seed) % (num_keys) + 1;
-              }
-              Key key = generate_key(k);
-              if(type == "M") {
-                unsigned ts = generate_timestamp(thread_id);
-                LWWPairLattice<string> val(
-                    TimestampValuePair<string>(ts, string(length, 'a')));
-                string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
-                receive_key_addr(&client, key, counters);
-                client.get_async(key);
-                receive_key_addr(&client, key, counters);
-                counters[0] += 2;
-                count += 2;
-              }
-              else if(type == "P") {
-                unsigned ts = generate_timestamp(thread_id);
-                LWWPairLattice<string> val(
-                    TimestampValuePair<string>(ts, string(length, 'a')));
-                string req_id = client.put_async(key, serialize(val), LatticeType::LWW);
-                receive_key_addr(&client, key, counters);
-                counters[0] += 1;
-                count += 1;
-              }else if(type == "G") {
-                client.get_async(key);
-                receive_key_addr(&client, key, counters);
-                counters[0] += 1;
-                count += 1;
-              }
+          unsigned get_ops_counter = 0;
+          unsigned put_ops_counter = 0;
+
+          for(unsigned i = 0; i < num_reqs; i++) {
+            unsigned k;
+            if (zipf > 0) {
+              k = sample(num_keys, seed, base, sum_probs);
+            } else {
+              k = rand_r(&seed) % (num_keys) + 1;
+            }
+            Key key = generate_key(k);
+            if (put_ops_counter < put_ops_per_loop) {
+              unsigned ts = generate_timestamp(thread_id);
+              LWWPairLattice<string> val(
+                  TimestampValuePair<string>(ts, string(length, 'a')));
+              client.put_async(key, serialize(val), LatticeType::LWW);
+              receive_key_addr(&client, key, counters);
+              counters[0]++;
+              count++;
+              put_ops_counter++;
+            }
+            if (get_ops_counter < get_ops_per_loop ) {
+              client.get_async(key);
+              receive_key_addr(&client, key, counters);
+              counters[0]++；
+              count++;
+              get_ops_counter++;
+            }
           }
+
           log->info("Loop {}: finish sending requests", loop_counter);
           auto responses = receive_rep(&client, counters, loop_counter, num_reqs, thread_id);
           epoch_end = std::chrono::system_clock::now();
@@ -332,7 +338,7 @@ void run(const unsigned &thread_id,
               TimestampValuePair<string>(ts, string(length, 'a')));
 
           client.put_async(generate_key(i), serialize(val), LatticeType::LWW);
-          // receive(&client);
+          receive(&client);
         }
 
         auto warmup_time = std::chrono::duration_cast<std::chrono::seconds>(
