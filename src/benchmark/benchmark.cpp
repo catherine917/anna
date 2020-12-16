@@ -164,6 +164,9 @@ void run(const unsigned &thread_id,
       split(msg, ':', v);
       string mode = v[0];
 
+      const unsigned COUNTERS_NUM = 6;
+      unsigned long counters[COUNTERS_NUM] = {0, 0, 0, 0, 0, 0};
+
       if (mode == "CACHE") {
         unsigned num_keys = stoi(v[1]);
         // warm up cache
@@ -190,8 +193,6 @@ void run(const unsigned &thread_id,
         unsigned time = stoi(v[5]);
         double zipf = stod(v[6]);
         unsigned loop = stod(v[7]);
-        const unsigned COUNTERS_NUM = 6;
-        unsigned long counters[COUNTERS_NUM] = {0, 0, 0, 0, 0, 0};
 
         map<unsigned, double> sum_probs;
         double base;
@@ -261,7 +262,7 @@ void run(const unsigned &thread_id,
             if (get_ops_counter < get_ops_per_loop ) {
               client.get_async(key);
               receive_key_addr(&client, key, counters);
-              counters[0]++；
+              counters[0]++;
               count++;
               get_ops_counter++;
             }
@@ -301,9 +302,9 @@ void run(const unsigned &thread_id,
 
         log->info("Total number of request is {}, number of key_address_puller is {}, number of response_puller is {}", counters[0], counters[1],counters[2]);
         log->info("Finished");
-        for (int i = 0; i < COUNTERS_NUM; i++) {
-          counters[i] = 0;
-        }
+        // for (int i = 0; i < COUNTERS_NUM; i++) {
+        //   counters[i] = 0;
+        // }
         UserFeedback feedback;
 
         feedback.set_uid(ip + ":" + std::to_string(thread_id));
@@ -338,7 +339,7 @@ void run(const unsigned &thread_id,
               TimestampValuePair<string>(ts, string(length, 'a')));
 
           client.put_async(generate_key(i), serialize(val), LatticeType::LWW);
-          receive(&client);
+          receive(&client, counters);
         }
 
         auto warmup_time = std::chrono::duration_cast<std::chrono::seconds>(
@@ -347,6 +348,9 @@ void run(const unsigned &thread_id,
         log->info("Warming up data took {} seconds.", warmup_time);
       } else {
         log->info("{} is an invalid mode.", mode);
+      }
+      for (int i = 0; i < COUNTERS_NUM; i++) {
+        counters[i] = 0;
       }
     }
   }
